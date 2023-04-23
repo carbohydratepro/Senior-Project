@@ -1,0 +1,10 @@
+*.swp
+*.swo
+*.swn
+*.pyc
+*.json
+*.tar.gz
+*.h5
+.ipynb_checkpoints
+.vscode
+deepcoder.egg-info
