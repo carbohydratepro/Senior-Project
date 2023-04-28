@@ -10,3 +10,8 @@ AtCoderから問題と解答を収集するプログラム
 ```text
 AtCoderのAPIレスポンスやHTML解析のテストを行う用のプログラム
 ```
+
+### convert_to_python3.py
+```text
+指定したディレクトリのpython2で書かれたプログラムをpython3に変換するプログラム
+```
