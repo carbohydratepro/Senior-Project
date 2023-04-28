@@ -18,5 +18,10 @@ AtCoderのAPIレスポンスやHTML解析のテストを行う用のプログラ
 
 ### Code-LMs
 ```text
-polycoderをクローンしていろいろいじる感じ
+polycoderをクローンしていろいろいじってる
+```
+
+### deepcoder-master
+```text
+deepcoderをクローンしていろいろいじってる
 ```
