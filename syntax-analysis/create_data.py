@@ -2,29 +2,28 @@ import sqlite3
 import os
 from tqdm import tqdm
 from read_csv import read_csv_files, data_output
+from database import Db
 
 
+def isFile(file_name):
+    return os.path.isfile(file_name)
 
-def create_db():
-    conn = sqlite3.connect('./db/coding_problems.db')
-    c = conn.cursor()
+def create_db(data):
+    dbname = './syntax-analysis/db/coding_problems.db'
+    db=Db(dbname)
+    # dbが存在しなければ作成
+    if not isFile(dbname):
+        command = (
+            '''CREATE TABLE propro(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            problem_id STRING,
+            program TEXT
+            )'''
+        )
+        db.db_create(command)
 
-    c.execute('''CREATE TABLE IF NOT EXISTS coding_problems
-                (id INTEGER PRIMARY KEY, problem_statement TEXT, solution_code TEXT, problem_id INTEGER)''')
-
-    # 問題文と回答コードのデータを挿入（以下は例）
-    data = [
-        (1, "問題文1", "解答コード1-1", 1),
-        (2, "問題文1", "解答コード1-2", 1),
-        # ...
-        (600, "問題文20", "解答コード20-30", 20),
-    ]
-
-    for item in data:
-        c.execute("INSERT INTO coding_problems VALUES (?, ?, ?, ?)", item)
-
-    conn.commit()
-    conn.close()
+    for d in data:
+        db.db_input(d)
 
 
 def read_python_file(dir_path, dir_name, file_name): # dir_path配下にあるdir_nameディレクトリのfile_nameの中身を返す関数
@@ -55,18 +54,26 @@ def create_dataset(data_info):
 
 def main():
     dir_path = "./syntax-analysis/Project_CodeNet/metadata"
-    num_files = 10000
+    num_files = 10
     num_lines = 1000000
     data_info = read_csv_files(dir_path, num_files, num_lines)
     print(len(data_info))
     # data_output(data_info)
 
-
     data_set = create_dataset(data_info)
-    print(len(data_set))
+    create_db(data_set)
 
+def check():
+    dbname = './syntax-analysis/db/coding_problems.db'
+    db = Db(dbname)
+    data = db.db_output()
+    print(data[0])
 
 if __name__ == "__main__":
-    main()
+    # データセット作成
+    # main()
+    
+    # データセット確認
+    check()
 
 
