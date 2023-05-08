@@ -44,8 +44,9 @@ def create_dataset(data_info):
         if language == "Python3" and status == "Accepted":
             dir_name = problem_id
             file_name = submission_id
-            data = read_python_file(dir_path, dir_name, file_name)
-            print(data)
+            answer = read_python_file(dir_path, dir_name, file_name)
+            if answer != None:
+                data_set.append(problem_id, answer)
             
 
 def main():
