@@ -25,8 +25,8 @@ def create_db():
     conn.commit()
     conn.close()
 
-def list_files(dir_path, dir_name): # dir_path配下にあるdir_nameディレクトリの中身を配列形式で返す関数
-    directory = dir_path+ "/"+ dir_name
+def return_file_data(dir_path, dir_name, file_name): # dir_path配下にあるdir_nameディレクトリのfile_nameの中身を返す関数
+    directory = dir_path+ "/"+ dir_name + "/" + file_name
     file_names = []
     for entry in os.listdir(directory):
         file_path = os.path.join(directory, entry)
@@ -36,22 +36,29 @@ def list_files(dir_path, dir_name): # dir_path配下にあるdir_nameディレ�
     return file_names
 
 
-def create_dataset():
-    exit()
+def create_dataset(data_info):
+    data_set = []
+    for info in data_info:
+        submission_id, problem_id, language, status = info[0], info[1], info[5], info[7]
+        if language == "Python3" and status == "Accepted":
+            print(info)
 
 def main():
     dir_path = "./syntax-analysis/Project_CodeNet/metadata"
     num_files = 10
-    num_lines = 10
+    num_lines = 1000000
     data_info = read_csv_files(dir_path, num_files, num_lines)
     # data_output(data_info)
+
+    # dir_name = "p00000"
+    # file_name = "s002191454.py"
+    # dir_path = "./syntax-analysis/Project_CodeNet_Python800"
+    # return_file_data(dir_path, dir_name, file_name)
 
     data_set = create_dataset(data_info)
 
 
 if __name__ == "__main__":
-    # main()
+    main()
 
-    dir_name = "p00000"
-    dir_path = "./syntax-analysis/Project_CodeNet_Python800"
-    list_files(dir_path, dir_name)
+
