@@ -11,3 +11,5 @@
 deepcoder.egg-info
 syntax-analysis/Project_CodeNet_Python800
 syntax-analysis/Project_CodeNet
+syntax-analysis/db
+syntax-analysis/model
