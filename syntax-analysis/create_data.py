@@ -27,7 +27,7 @@ def create_db():
 
 
 def read_python_file(dir_path, dir_name, file_name): # dir_path配下にあるdir_nameディレクトリのfile_nameの中身を返す関数
-    file_path = dir_path+ "/"+ dir_name + "/" + file_name + "/"
+    file_path = dir_path+ "/"+ dir_name + "/" + file_name + ".py"
     try:
         with open(file_path, mode='r', encoding='utf-8') as py_file:
             file_content = py_file.read()
@@ -38,9 +38,14 @@ def read_python_file(dir_path, dir_name, file_name): # dir_path配下にあるdi
 
 def create_dataset(data_info):
     data_set = []
+    dir_path = "./syntax-analysis/Project_CodeNet_Python800"
     for info in data_info:
         submission_id, problem_id, language, status = info[0], info[1], info[5], info[7]
         if language == "Python3" and status == "Accepted":
+            dir_name = problem_id
+            file_name = submission_id
+            data = read_python_file(dir_path, dir_name, file_name)
+            print(data)
             
 
 def main():
