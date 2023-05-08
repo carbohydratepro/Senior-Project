@@ -1,10 +1,11 @@
 import os
 import csv
+from tqdm import tqdm
 
 def read_csv_files(directory, num_files, num_lines):
     data_set = []
     count_files = 0
-    for file_name in os.listdir(directory):
+    for file_name in tqdm(os.listdir(directory), postfix="csvファイルから情報を取得中"):
         if count_files >= num_files:
             break
 
@@ -25,9 +26,14 @@ def data_output(data):
     for d in data:
         print(d)
 
+def main():
+    print("details")
+
+
 if __name__ == '__main__':
-    dir_path = "./syntax-analysis/Project_CodeNet/metadata"
-    num_files = 10
-    num_lines = 10
-    data_set = read_csv_files(dir_path, num_files, num_lines)
-    data_output(data_set)
+    # dir_path = "./syntax-analysis/Project_CodeNet/metadata"
+    # num_files = 10
+    # num_lines = 10
+    # data_set = read_csv_files(dir_path, num_files, num_lines)
+    # data_output(data_set)
+    main()
