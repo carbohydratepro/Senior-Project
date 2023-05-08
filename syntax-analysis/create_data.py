@@ -1,7 +1,9 @@
 import sqlite3
 from read_csv import read_csv_files, data_output
 
-def main():
+
+
+def create():
     conn = sqlite3.connect('./db/coding_problems.db')
     c = conn.cursor()
 
@@ -22,9 +24,13 @@ def main():
     conn.commit()
     conn.close()
 
-if __name__ == "__main__":
+def main():
     dir_path = "./syntax-analysis/Project_CodeNet/metadata"
     num_files = 10
     num_lines = 10
     data_set = read_csv_files(dir_path, num_files, num_lines)
     data_output(data_set)
+
+
+if __name__ == "__main__":
+    main()
