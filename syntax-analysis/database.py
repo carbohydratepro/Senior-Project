@@ -16,7 +16,7 @@ class Db():
         #値をデータベースに格納
         conn=sqlite3.connect(self.db)
         cur = conn.cursor()
-        sql = 'INSERT INTO books (title, author, body) values (?,?,?)'
+        sql = 'INSERT INTO propro (problem_id, program) values (?, ?)'
         cur.execute(sql, article)
         conn.commit()
         cur.close()
@@ -26,7 +26,7 @@ class Db():
         #データベースから値を抽出
         conn=sqlite3.connect(self.db)
         cur = conn.cursor()
-        cur.execute('SELECT * from books')
+        cur.execute('SELECT * from propro')
         data = cur.fetchall()
         cur.close()
         conn.close()
