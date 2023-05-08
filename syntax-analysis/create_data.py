@@ -1,5 +1,6 @@
 import sqlite3
 import os
+from tqdm import tqdm
 from read_csv import read_csv_files, data_output
 
 
@@ -39,25 +40,30 @@ def read_python_file(dir_path, dir_name, file_name): # dir_path配下にあるdi
 def create_dataset(data_info):
     data_set = []
     dir_path = "./syntax-analysis/Project_CodeNet_Python800"
-    for info in data_info:
+
+    for info in tqdm(data_info, postfix="問題と回答のデータセットを生成中"):
         submission_id, problem_id, language, status = info[0], info[1], info[5], info[7]
         if language == "Python3" and status == "Accepted":
             dir_name = problem_id
             file_name = submission_id
             answer = read_python_file(dir_path, dir_name, file_name)
             if answer != None:
-                data_set.append(problem_id, answer)
+                data_set.append([problem_id, answer])
+
+    return data_set
             
 
 def main():
     dir_path = "./syntax-analysis/Project_CodeNet/metadata"
-    num_files = 10
+    num_files = 10000
     num_lines = 1000000
     data_info = read_csv_files(dir_path, num_files, num_lines)
+    print(len(data_info))
     # data_output(data_info)
 
 
     data_set = create_dataset(data_info)
+    print(len(data_set))
 
 
 if __name__ == "__main__":
