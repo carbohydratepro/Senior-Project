@@ -22,6 +22,21 @@ def read_csv_files(directory, num_files, num_lines):
             count_files += 1
     return data_set
 
+
+def read_csv_info(file_path, num_lines):
+    info = []
+    with open(file_path, mode='r', encoding='utf-8') as csv_file:
+        csv_reader = csv.reader(csv_file)
+        count_lines = 0
+        for row in csv_reader:
+            if count_lines >= num_lines:
+                break
+            info.append(row)
+            count_lines += 1
+
+    return info
+
+
 def data_output(data):
     for d in data:
         print(d)
