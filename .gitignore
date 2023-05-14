@@ -6,6 +6,7 @@
 *.tar.gz
 *.h5
 *.bak
+memo.txt
 .ipynb_checkpoints
 .vscode
 deepcoder.egg-info
