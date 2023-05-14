@@ -50,7 +50,10 @@ def main():
     if not isFile(modelname):
         create(modelname)
     
-    
+    model = Model(modelname).read()
+    sim = model.dv.most_similar('p00002')
+    print(sim)
+    print(ratingAverage([s[1] for s in sim]))
 
 
 if __name__ == "__main__":
