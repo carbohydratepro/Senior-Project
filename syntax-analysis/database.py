@@ -12,11 +12,11 @@ class Db():
         conn.commit()
         conn.close()
 
-    def db_input(self,article):
+    def db_input(self, article, sql):
         #値をデータベースに格納
         conn=sqlite3.connect(self.db)
         cur = conn.cursor()
-        sql = 'INSERT INTO propro (problem_id, program) values (?, ?)'
+        # sql = 'INSERT INTO propro (problem_id, program) values (?, ?)'
         cur.execute(sql, article)
         conn.commit()
         cur.close()
