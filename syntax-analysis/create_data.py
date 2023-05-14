@@ -8,28 +8,34 @@ from database import Db
 def isFile(file_name):
     return os.path.isfile(file_name)
 
-def create_db(data, columns):
-    dbname = './syntax-analysis/db/coding_problems.db'
+def create_db(data, columns, dbname, table_name):
+    def create_insert_command(table_name, columns):
+        columns_str = ', '.join(columns)
+        placeholders_str = ', '.join(['?' for _ in columns])
+        command = f"INSERT INTO {table_name} ({columns_str}) values ({placeholders_str})"
+        return command
+    
     db = Db(dbname)
     # dbが存在しなければ作成
     if not isFile(dbname):
         columns_str = ', '.join([f"{col[0]} {col[1]}" for col in columns])
         command = (
-            f'''CREATE TABLE propro(
+            f'''CREATE TABLE {table_name}(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             {columns_str}
             )'''
         )
         db.db_create(command)
 
+    sql = create_insert_command(table_name, [column[0] for column in columns])
     for d in data:
-        db.db_input(d)
+        db.db_input(d, sql)
 
-def read_python_file(dir_path, dir_name, file_name): # dir_path配下にあるdir_nameディレクトリのfile_nameの中身を返す関数
-    file_path = dir_path+ "/"+ dir_name + "/" + file_name + ".py"
+def read_file(dir_path, dir_name, file_name): # dir_path配下にあるdir_nameディレクトリのfile_nameの中身を返す関数
+    file_path = dir_path+ "/"+ dir_name + "/" + file_name
     try:
-        with open(file_path, mode='r', encoding='utf-8') as py_file:
-            file_content = py_file.read()
+        with open(file_path, mode='r', encoding='utf-8') as file:
+            file_content = file.read()
             return file_content
     except:
         return None
@@ -43,15 +49,27 @@ def create_dataset(data_info):
         submission_id, problem_id, language, status = info[0], info[1], info[5], info[7]
         if language == "Python3" and status == "Accepted":
             dir_name = problem_id
-            file_name = submission_id
-            answer = read_python_file(dir_path, dir_name, file_name)
+            file_name = submission_id + ".py"
+            answer = read_file(dir_path, dir_name, file_name)
             if answer != None:
                 data_set.append([problem_id, answer])
 
     return data_set
 
 def create_only_problem(data_info):
-    pass       
+    data_set = []
+    dir_path = "./syntax-analysis/Project_CodeNet"
+    dir_name = "problem_descriptions"
+
+    for info in tqdm(data_info, postfix="問題のデータセットを作成中"):
+        problem_id, dataset =info[0], info[2]
+        if dataset == "AIZU":
+            file_name = problem_id + ".html"
+            content = read_file(dir_path, dir_name, file_name)
+            if content != None:
+                data_set.append([problem_id, content])
+
+    return data_set     
 
 def main():
     # dir_path = "./syntax-analysis/Project_CodeNet/metadata"
@@ -63,14 +81,18 @@ def main():
 
     data_info = read_csv_info(".\syntax-analysis\Project_CodeNet\metadata\problem_list.csv", 10)
     print(data_info)
-    exit()
+
     # データセット作成
-    data_set = create_dataset(data_info)
-    
+    data_set = create_only_problem(data_info)
+
     columns = [
+        ["problem_id", "STRING"],
         ["problem", "TEXT"]
     ]
-    create_db(data_set, columns)
+    dbname = './syntax-analysis/db/problems.db'
+    table_name = "problems"
+    print(data_set)
+    create_db(data_set, columns, dbname, table_name)
 
 def check():
     dbname = './syntax-analysis/db/coding_problems.db'
