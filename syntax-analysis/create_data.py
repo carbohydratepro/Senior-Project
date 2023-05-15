@@ -3,6 +3,7 @@ import os
 from tqdm import tqdm
 from read_csv import read_csv_files, read_csv_info, data_output
 from database import Db
+from del_tag import delete_tag
 
 
 def isFile(file_name):
@@ -66,10 +67,14 @@ def create_only_problem(data_info):
         if dataset == "AIZU":
             file_name = problem_id + ".html"
             content = read_file(dir_path, dir_name, file_name)
+            content = delete_tag(content)
             if content != None:
                 data_set.append([problem_id, content])
 
     return data_set     
+
+def create_only_program(data_info):
+    pass
 
 def main():
     # dir_path = "./syntax-analysis/Project_CodeNet/metadata"
@@ -79,7 +84,7 @@ def main():
     # # print(len(data_info))
     # # data_output(data_info)
 
-    data_info = read_csv_info(".\syntax-analysis\Project_CodeNet\metadata\problem_list.csv", 10)
+    data_info = read_csv_info(".\syntax-analysis\Project_CodeNet\metadata\problem_list.csv", 100000)
     print(data_info)
 
     # データセット作成
