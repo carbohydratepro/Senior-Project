@@ -5,9 +5,9 @@ from transformers import BertTokenizer, BertForSequenceClassification
 from janome.tokenizer import Tokenizer
 
 
-# model_name = "bert-base-uncased"
-# tokenizer = BertTokenizer.from_pretrained(model_name)
-# model = BertForSequenceClassification.from_pretrained(model_name)
+model_name = "bert-base-uncased"
+tokenizer = BertTokenizer.from_pretrained(model_name)
+model = BertForSequenceClassification.from_pretrained(model_name)
 
 def preprocess_problem_statement(problem_statement, language="en"):
     # 文の分割
@@ -54,80 +54,7 @@ def generate_examples(inputs, outputs): #入出力の例を生成
 
 
 def main():
-    problem_txt = (
-        """
-        
 
-<H1>QQ</H1>
-
-
-<p>
-Write a program which prints multiplication tables in the following format:
-</p>
-
-<pre>
-1x1=1
-1x2=2
-.
-.
-9x8=72
-9x9=81
-</pre>
-
-<H2>Input</H2>
-
-<p>
-No input.
-</p>
-
-<H2>Output</H2>
-
-<pre>
-1x1=1
-1x2=2
-.
-.
-9x8=72
-9x9=81
-</pre>
-
-
-<H2>Template for C</H2>
-
-<pre>
-#include&lt;stdio.h&gt;
-
-int main(){
-
-    return 0;
-}
-</pre>
-
-<H2>Template for C++</H2>
-
-<pre>
-#include&lt;iostream&gt;
-using namespace std;
-
-int main(){
-
-    return 0;
-}
-</pre>
-
-
-<H2>Template for Java</H2>
-
-<pre>
-class Main{
-    public static void main(String[] a){
-
-    }
-}
-</pre>
-"""
-    )
-    
     result = preprocess_problem_statement(problem_txt)
     print(result)
 
