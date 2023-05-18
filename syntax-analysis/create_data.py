@@ -74,6 +74,21 @@ def create_only_problem(data_info):
     return data_set     
 
 def create_only_program(data_info):
+    data_info = read_csv_info(".\syntax-analysis\Project_CodeNet\metadata\problem_list.csv", 100000)
+    print(data_info)
+
+    # データセット作成
+    data_set = create_only_problem(data_info)
+
+    columns = [
+        ["problem_id", "STRING"],
+        ["problem", "TEXT"]
+        ["FOREIGN KEY(problem_id)", "REFERENCES Problems(problem_id)"]
+    ]
+    dbname = './syntax-analysis/db/datasets.db'
+    table_name = "programs"
+    print(data_set)
+    create_db(data_set, columns, dbname, table_name)
     pass
 
 def main():
