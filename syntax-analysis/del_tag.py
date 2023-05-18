@@ -8,3 +8,4 @@ def delete_tag(text):
     else:
         return None
     
+# delete_tag()
