@@ -64,12 +64,11 @@ def create_only_problem(data_info):
 
     for info in tqdm(data_info, postfix="問題のデータセットを作成中"):
         problem_id, dataset =info[0], info[2]
-        if dataset == "AIZU":
-            file_name = problem_id + ".html"
-            content = read_file(dir_path, dir_name, file_name)
-            content = delete_tag(content)
-            if content != None:
-                data_set.append([problem_id, content])
+        file_name = problem_id + ".html"
+        content = read_file(dir_path, dir_name, file_name)
+        content = delete_tag(content)
+        if content != None:
+            data_set.append([problem_id, content, dataset])
 
     return data_set     
 
@@ -99,12 +98,25 @@ def main():
     # # print(len(data_info))
     # # data_output(data_info)
 
+    # 問題文のデータセット作成
     data_info = read_csv_info(".\syntax-analysis\Project_CodeNet\metadata\problem_list.csv", 100000)
-    print(data_info)
+    # print(data_info)
 
     # データセット作成
     data_set = create_only_problem(data_info)
 
+    columns = [
+        ["problem_id", "STRING"],
+        ["problem", "TEXT"],
+        ["dataset", "STRING"]
+    ]
+    dbname = './syntax-analysis/db/problems.db'
+    table_name = "problems"
+    print(data_set)
+    exit()
+    create_db(data_set, columns, dbname, table_name)
+
+    # 解答群のデータセット作成
     columns = [
         ["problem_id", "STRING"],
         ["problem", "TEXT"],
