@@ -89,7 +89,7 @@ def create_only_program(data_info):
     table_name = "programs"
     print(data_set)
     create_db(data_set, columns, dbname, table_name)
-    pass
+
 
 def main():
     # dir_path = "./syntax-analysis/Project_CodeNet/metadata"
@@ -107,11 +107,15 @@ def main():
 
     columns = [
         ["problem_id", "STRING"],
-        ["problem", "TEXT"]
+        ["problem", "TEXT"],
+        ["status", "STRING"],
+        ["code_size", "INT"],
+        ["FOREIGN KEY(problem_id)", "REFERENCES Problems(problem_id)"]
     ]
     dbname = './syntax-analysis/db/problems.db'
     table_name = "problems"
     print(data_set)
+    exit()
     create_db(data_set, columns, dbname, table_name)
 
 def check():
