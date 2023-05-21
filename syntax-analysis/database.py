@@ -40,3 +40,19 @@ class Db():
         conn.commit()
         cur.close()
         conn.close()
+    
+    def db_check_table_exists(self, table_name):
+        # 任意のテーブルが存在するかをチェック
+        conn=sqlite3.connect(self.db)
+        cur = conn.cursor()
+        cur.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table_name}';")
+
+        # 結果を取得する
+        result = cur.fetchone()
+
+        # 接続を閉じる
+        cur.close()
+        conn.close()
+
+        # テーブルが存在するかどうかを返す
+        return result is not None
