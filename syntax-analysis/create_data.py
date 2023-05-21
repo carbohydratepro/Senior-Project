@@ -81,7 +81,7 @@ def create_only_program(data_info):
 
     columns = [
         ["problem_id", "STRING"],
-        ["problem", "TEXT"]
+        ["problem", "TEXT"],
         ["FOREIGN KEY(problem_id)", "REFERENCES Problems(problem_id)"]
     ]
     dbname = './syntax-analysis/db/datasets.db'
