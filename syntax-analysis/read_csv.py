@@ -28,7 +28,10 @@ def read_csv_info(file_path, num_lines):
     with open(file_path, mode='r', encoding='utf-8') as csv_file:
         csv_reader = csv.reader(csv_file)
         count_lines = 0
-        for row in csv_reader:
+        # 最初の一行は処理を行わない
+        for i, row in enumerate(csv_reader):
+            if i == 0:
+                continue
             if count_lines >= num_lines:
                 break
             info.append(row)
