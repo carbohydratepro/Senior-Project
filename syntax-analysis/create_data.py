@@ -18,8 +18,9 @@ def create_db(data, columns, dbname, table_name, relation=None):
         return command
     
     db = Db(dbname)
-    # dbが存在しなければ作成
-    if not isFile(dbname):
+
+    # テーブルが存在しなければ作成
+    if not db.db_check_table_exists(table_name):
         columns_str = ', '.join([f"{col[0]} {col[1]}" for col in columns])
         # データベースの依存関係を追加
         if relation != None:
@@ -32,7 +33,6 @@ def create_db(data, columns, dbname, table_name, relation=None):
             {columns_str}
             )'''
         )
-        print(command)
         db.db_create(command)
 
     # データベースにデータを格納
@@ -69,9 +69,9 @@ def create_only_program(problem_id):
     data_set = []
     dir_path = "./syntax-analysis/Project_CodeNet_Python800"
 
+
     for id in tqdm(problem_id, postfix="回答のデータセットを生成中"):
-        
-        problem_info = read_csv_info(f".\syntax-analysis\Project_CodeNet\metadata\{id}.csv", 10)
+        problem_info = read_csv_info(f".\syntax-analysis\Project_CodeNet\metadata\{id}.csv", 1000000)
         for info in problem_info:
             submission_id, problem_id, language, status, code_size = info[0], info[1], info[5], info[7], info[10]
             if language == "Python3":
