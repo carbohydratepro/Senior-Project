@@ -9,7 +9,8 @@ from del_tag import delete_tag
 def isFile(file_name):
     return os.path.isfile(file_name)
 
-def create_db(data, columns, dbname, table_name):
+def create_db(data, columns, dbname, table_name, relation=None):
+    # dbコマンドを作成する関数
     def create_insert_command(table_name, columns):
         columns_str = ', '.join(columns)
         placeholders_str = ', '.join(['?' for _ in columns])
@@ -20,14 +21,22 @@ def create_db(data, columns, dbname, table_name):
     # dbが存在しなければ作成
     if not isFile(dbname):
         columns_str = ', '.join([f"{col[0]} {col[1]}" for col in columns])
+        # データベースの依存関係を追加
+        if relation != None:
+            for rel in relation:
+                new_column, ref_table, ref_column = rel
+                columns_str += f', FOREIGN KEY({new_column}) REFERENCES {ref_table}({ref_column})'
         command = (
             f'''CREATE TABLE {table_name}(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             {columns_str}
             )'''
         )
+        print(command)
+        exit()
         db.db_create(command)
 
+    # データベースにデータを格納
     sql = create_insert_command(table_name, [column[0] for column in columns])
     for d in data:
         db.db_input(d, sql)
@@ -68,7 +77,7 @@ def create_only_problem(data_info):
         content = read_file(dir_path, dir_name, file_name)
         content = delete_tag(content)
         if content != None:
-            data_set.append([problem_id, content, dataset])
+            data_set.append([problem_id, dataset, content])
 
     return data_set     
 
@@ -82,7 +91,7 @@ def create_only_program(data_info):
     columns = [
         ["problem_id", "STRING"],
         ["problem", "TEXT"],
-        ["FOREIGN KEY(problem_id)", "REFERENCES Problems(problem_id)"]
+        ["FOREIGN KEY(problem_id)", "REFERENCES problems(problem_id)"]
     ]
     dbname = './syntax-analysis/db/datasets.db'
     table_name = "programs"
@@ -98,37 +107,41 @@ def main():
     # # print(len(data_info))
     # # data_output(data_info)
 
-    # 問題文のデータセット作成
+    # 1. 問題文のデータセット作成
     data_info = read_csv_info(".\syntax-analysis\Project_CodeNet\metadata\problem_list.csv", 100000)
     # print(data_info)
 
-    # データセット作成
+    # 中身：[id, dataset, problem]
     data_set = create_only_problem(data_info)
 
     columns = [
         ["problem_id", "STRING"],
+        ["dataset", "STRING"],
         ["problem", "TEXT"],
-        ["dataset", "STRING"]
     ]
-    dbname = './syntax-analysis/db/problems.db'
+    dbname = './syntax-analysis/db/mydatasets.db'
     table_name = "problems"
-    print(data_set)
-    exit()
+
     create_db(data_set, columns, dbname, table_name)
 
-    # 解答群のデータセット作成
+    # 2. 解答群のデータセット作成
     columns = [
         ["problem_id", "STRING"],
         ["problem", "TEXT"],
         ["status", "STRING"],
         ["code_size", "INT"],
-        ["FOREIGN KEY(problem_id)", "REFERENCES Problems(problem_id)"]
     ]
-    dbname = './syntax-analysis/db/problems.db'
-    table_name = "problems"
+    
+    # データベースの依存関係を追加
+    relation = [ # new_column, ref_table, ref_column
+        ["problem_id", "Problems", "problem_id"],
+        ]
+    
+    dbname = './syntax-analysis/db/mydatasets.db'
+    table_name = "programs"
     print(data_set)
     exit()
-    create_db(data_set, columns, dbname, table_name)
+    create_db(data_set, columns, dbname, table_name, relation)
 
 def check():
     dbname = './syntax-analysis/db/coding_problems.db'
