@@ -51,6 +51,7 @@ def create_datasets():
     cur = conn.cursor()
 
     # SQLクエリを実行
+    print("データベースからデータを読み込み中")
     cur.execute('''
         SELECT problems.problem_id, problems.problem, programs.program
         FROM problems
@@ -83,7 +84,7 @@ def create_datasets():
             else:
                 continue
 
-        if i == 10:
+        if i == 10000:
             break
 
 
@@ -159,8 +160,66 @@ def main():
             loss = nn.CrossEntropyLoss()(output.view(-1, vocab_size), programs.to(device).view(-1))  # Move tensors to GPU
             loss.backward()
             optimizer.step()
+
+        # Save
+        torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'loss': loss,
+                    }, f'.\\run-test\\checkpoint\\checkpoint.pth')
+        
+        # # Load
+        # device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
+        # # Load on CPU
+        # checkpoint = torch.load('./senior-project/run-test/checkpoint/checkpoint.pth', map_location=torch.device('cpu'))
+
+        # # Move model to the GPU if available
+        # model.load_state_dict(checkpoint['model_state_dict'])
+
+        # # Similarly, ensure that the optimizer state is on the right device
+        # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        # for state in optimizer.state.values():
+        #     for k, v in state.items():
+        #         if isinstance(v, torch.Tensor):
+        #             state[k] = v.to(device)
+
+        # model.load_state_dict(checkpoint['model_state_dict'])
+        # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        # epoch = checkpoint['epoch']
+        # loss = checkpoint['loss']
+
         print('Epoch:', epoch, 'Loss:', loss.item())
 
+
+def eval():
+    # テストデータの準備
+    test_problems, test_programs = [...], [...]  # これらはあなたのテストデータ
+    test_dataset = Seq2SeqDataset(test_problems, test_programs)
+    test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+
+    # モデルの評価
+    model.eval()  # モデルを評価モードに
+    total_loss = 0
+    total_accuracy = 0
+    for problems, programs in test_dataloader:
+        with torch.no_grad():  # 勾配の計算をオフ
+            output = model(problems.to(device), programs.to(device))
+            loss = nn.CrossEntropyLoss()(output.view(-1, vocab_size), programs.view(-1))
+            total_loss += loss.item()
+
+            # 予測を取得（最大値のインデックス）
+            _, predicted = torch.max(output, dim=-1)
+
+            # 精度を計算
+            correct = (predicted == programs).float()  # 正解は1、不正解は0
+            accuracy = correct.sum() / len(correct)
+            total_accuracy += accuracy.item()
+
+    # 平均損失と精度を出力
+    print('Test Loss:', total_loss / len(test_dataloader))
+    print('Test Accuracy:', total_accuracy / len(test_dataloader))
 
 
 if __name__ == "__main__":
