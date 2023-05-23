@@ -2,7 +2,7 @@ import torch
 from transformers import BertTokenizer, BertForQuestionAnswering, Trainer, TrainingArguments
 
 # トークナイザとモデルのロード
-tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', use_fast=True)
 model = BertForQuestionAnswering.from_pretrained('bert-base-uncased')
 
 # トレーニングデータの準備
@@ -13,7 +13,7 @@ train_data = [{'context': 'The sky is blue.',
                'answers': {'answer_start': [11], 'text': ['blue']}}]
                
 train_encodings = tokenizer([d['context'] for d in train_data], 
-                            [                            d['question'] for d in train_data], 
+                            [d['question'] for d in train_data], 
                             truncation=True, padding=True)
 
 # 答えの位置をトークン単位でエンコード
