@@ -85,7 +85,7 @@ def create_only_program(problem_id):
 
 def main():
     # 1. 問題文のデータセット作成
-    data_info = read_csv_info(".\syntax-analysis\Project_CodeNet\metadata\problem_list.csv", 10)
+    data_info = read_csv_info(".\syntax-analysis\Project_CodeNet\metadata\problem_list.csv", 5000)
     # print(data_info)
 
     # 中身：[id, dataset, problem]
