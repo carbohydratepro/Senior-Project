@@ -22,18 +22,33 @@ class CustomVisitor(ast.NodeVisitor):
 
 
 def main():
-    with open("./syntax-analysis/del_tag.py", mode='r', encoding='utf-8') as f:
-        code = f.read()
+    def analysis(code):
+        tree = convert_ast(code)
 
-    tree = convert_ast(code)
+        visitor = CustomVisitor()
+        visitor.visit(tree)
 
-    visitor = CustomVisitor()
-    visitor.visit(tree)
+        print(f"Function definitions: {visitor.function_defs}") #定義されている関数の数
+        print(f"Function calls: {visitor.function_calls}") #関数が呼び出されている回数
 
-    print(f"Function definitions: {visitor.function_defs}") #定義されている関数の数
-    print(f"Function calls: {visitor.function_calls}") #関数が呼び出されている回数
+        print(ast.dump(tree, indent=2))
+    
+    pathes = [".\syntax-analysis\Project_CodeNet_Python800\p00000\s002191454.py",
+              ".\syntax-analysis\Project_CodeNet_Python800\p00000\s020852510.py",
+              ".\syntax-analysis\Project_CodeNet_Python800\p00000\s044374417.py",
+              ".\syntax-analysis\Project_CodeNet_Python800\p00000\s061434217.py",
+              ".\syntax-analysis\Project_CodeNet_Python800\p00000\s071165995.py",
+              ".\syntax-analysis\Project_CodeNet_Python800\p00000\s080762108.py"]
+    
+    for path in pathes:
+        with open(path, mode='r', encoding='utf-8') as f:
+            code = f.read()
+            print(code)
+            analysis(code)
 
-    print(ast.dump(tree, indent=2))
+
+
+
 
 
 
