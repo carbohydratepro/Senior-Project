@@ -3,13 +3,14 @@ import ast
 from langdetect import detect
 from tqdm import tqdm
 import torch
+import random
 from torch import nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.optim import Adam
 from torch.utils.data import DataLoader, Dataset
 from transformers import BertModel, BertTokenizer
 
-def create_datasets(): 
+def create_datasets(data_num=100): 
     # コードをASTに変換
     def code_to_ast(code):
         try:
@@ -34,7 +35,13 @@ def create_datasets():
 
         return feature_vector
 
-
+    # データセットからランダムに抽出する関数
+    def select_random_elements(array, n):
+        if n > len(array):
+            raise ValueError("n is greater than the length of the array.")
+        
+        random_elements = random.sample(array, n)
+        return random_elements
 
     def detect_language(text):
         try:
@@ -68,7 +75,7 @@ def create_datasets():
                 data[1],
                 truncation=True,
                 padding='max_length',
-                max_length=512
+                max_length=256
                 )
                     
             ast_tree = code_to_ast(data[2])
@@ -78,19 +85,17 @@ def create_datasets():
                     feature_vector,
                     truncation=True,
                     padding='max_length',
-                    max_length=512
+                    max_length=256
                     )
                 datasets.append([problem_encoding, program_encoding])
             else:
                 continue
 
-        if i == 10000:
-            break
-
 
     # 接続を閉じる
     conn.close()
-    return datasets
+    
+    return select_random_elements(datasets, data_num)
 
 
 
@@ -140,7 +145,7 @@ def main():
     padding_token_id = 0
 
     # データセットの読み込み
-    datasets = create_datasets()
+    datasets = create_datasets(1000)
     problems = [data[0] for data in tqdm(datasets, postfix="データセット処理中：プロブレム")]
     programs = [data[1] for data in tqdm(datasets, postfix="データセット処理中：プログラム")]
 
@@ -161,48 +166,61 @@ def main():
             loss.backward()
             optimizer.step()
 
-        # Save
-        torch.save({
-                    'epoch': epoch,
-                    'model_state_dict': model.state_dict(),
-                    'optimizer_state_dict': optimizer.state_dict(),
-                    'loss': loss,
-                    }, f'.\\run-test\\checkpoint\\checkpoint.pth')
-        
-        # # Load
-        # device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-
-        # # Load on CPU
-        # checkpoint = torch.load('./senior-project/run-test/checkpoint/checkpoint.pth', map_location=torch.device('cpu'))
-
-        # # Move model to the GPU if available
-        # model.load_state_dict(checkpoint['model_state_dict'])
-
-        # # Similarly, ensure that the optimizer state is on the right device
-        # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        # for state in optimizer.state.values():
-        #     for k, v in state.items():
-        #         if isinstance(v, torch.Tensor):
-        #             state[k] = v.to(device)
-
-        # model.load_state_dict(checkpoint['model_state_dict'])
-        # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        # epoch = checkpoint['epoch']
-        # loss = checkpoint['loss']
 
         print('Epoch:', epoch, 'Loss:', loss.item())
 
+    # Save
+    torch.save({
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'loss': loss,
+                }, f'.\\run-test\\checkpoint\\checkpoint_100.pth')
+    
+    torch.save(model.state_dict(), f'.\\run-test\\checkpoint\\model_100.pth')
 
 def eval():
+    # データセットの読み込み
+    datasets = create_datasets()
+    test_problems = [data[0] for data in tqdm(datasets, postfix="データセット処理中：プロブレム")]
+    test_programs = [data[1] for data in tqdm(datasets, postfix="データセット処理中：プログラム")]
+
     # テストデータの準備
-    test_problems, test_programs = [...], [...]  # これらはあなたのテストデータ
-    test_dataset = Seq2SeqDataset(test_problems, test_programs)
-    test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+    padding_token_id = 0
+    test_dataset = Seq2SeqDataset(test_problems, test_programs, padding_token_id)
+    test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False, collate_fn=test_dataset.collate_fn)
+
+    # モデルの読み込み
+    # Load
+    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
+    # モデルとオプティマイザの準備
+    model = Seq2SeqModel().to(device)  # deviceはハードウェア（CPUまたはGPU）
+    optimizer = Adam(model.parameters(), lr=0.001)
+
+    # Load on CPU
+    checkpoint = torch.load(f'.\\run-test\\checkpoint\\checkpoint_100.pth', map_location=torch.device('cuda'))
+
+    # Move model to the GPU if available
+    model.load_state_dict(checkpoint['model_state_dict'])
+
+    # Similarly, ensure that the optimizer state is on the right device
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    for state in optimizer.state.values():
+        for k, v in state.items():
+            if isinstance(v, torch.Tensor):
+                state[k] = v.to(device)
+
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    epoch = checkpoint['epoch']
+    loss = checkpoint['loss']
 
     # モデルの評価
     model.eval()  # モデルを評価モードに
     total_loss = 0
     total_accuracy = 0
+    vocab_size=30522
     for problems, programs in test_dataloader:
         with torch.no_grad():  # 勾配の計算をオフ
             output = model(problems.to(device), programs.to(device))
