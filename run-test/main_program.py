@@ -75,7 +75,7 @@ def create_datasets(data_num=100):
                 data[1],
                 truncation=True,
                 padding='max_length',
-                max_length=256
+                max_length=1024
                 )
                     
             ast_tree = code_to_ast(data[2])
@@ -85,7 +85,7 @@ def create_datasets(data_num=100):
                     feature_vector,
                     truncation=True,
                     padding='max_length',
-                    max_length=256
+                    max_length=1024
                     )
                 datasets.append([problem_encoding, program_encoding])
             else:
@@ -145,7 +145,7 @@ def main():
     padding_token_id = 0
 
     # データセットの読み込み
-    datasets = create_datasets(1000)
+    datasets = create_datasets(500)
     problems = [data[0] for data in tqdm(datasets, postfix="データセット処理中：プロブレム")]
     programs = [data[1] for data in tqdm(datasets, postfix="データセット処理中：プログラム")]
 
