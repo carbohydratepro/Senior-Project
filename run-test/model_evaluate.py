@@ -226,11 +226,10 @@ def eval():
     vocab_size = 30522
 
     # データセットの読み込み
-    datasets = read_data(100)
-    print(datasets[0])
-    exit()
-    test_problems = [data[0] for data in tqdm(datasets, postfix="データセット処理中：プロブレム")]
-    test_programs = [data[1] for data in tqdm(datasets, postfix="データセット処理中：プログラム")]
+    data = read_data(100)
+    datasets = create_datasets(data)
+    test_problems = [data[0] for data in datasets]
+    test_programs = [data[1] for data in datasets]
 
     # テストデータの準備
     padding_token_id = 0
