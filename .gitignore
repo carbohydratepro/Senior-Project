@@ -16,3 +16,4 @@ syntax-analysis/Project_CodeNet
 syntax-analysis/db
 syntax-analysis/model
 run-test/checkpoint
+run-test/figure
