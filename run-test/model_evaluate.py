@@ -10,7 +10,38 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader, Dataset
 from transformers import BertModel, BertTokenizer
 
-def create_datasets(data_num=100): 
+def read_data(data_num=100): 
+    # データセットからランダムに抽出する関数
+    def select_random_elements(array, n):
+        if n > len(array):
+            raise ValueError("n is greater than the length of the array.")
+        
+        random_elements = random.sample(array, n)
+        return random_elements
+
+    # データベースに接続
+    conn = sqlite3.connect(".\syntax-analysis\db\mydatasets.db")
+
+    # カーソルオブジェクトを作成
+    cur = conn.cursor()
+
+    # SQLクエリを実行
+    print("データベースからデータを読み込み中")
+    cur.execute('''
+        SELECT problems.problem_id, problems.problem, programs.program
+        FROM problems
+        INNER JOIN programs ON problems.problem_id = programs.problem_id
+    ''')
+
+    data = cur.fetchall() #datas=[[id, problem, program], [id, problem, program], [id, problem, program], ...]
+
+    # 接続を閉じる
+    conn.close()
+
+    return select_random_elements(data, data_num)
+
+
+def create_datasets(data):
     # コードをASTに変換
     def code_to_ast(code):
         try:
@@ -35,14 +66,7 @@ def create_datasets(data_num=100):
 
         return feature_vector
 
-    # データセットからランダムに抽出する関数
-    def select_random_elements(array, n):
-        if n > len(array):
-            raise ValueError("n is greater than the length of the array.")
-        
-        random_elements = random.sample(array, n)
-        return random_elements
-
+    # textの言語を判定
     def detect_language(text):
         try:
             lang = detect(text)
@@ -51,25 +75,10 @@ def create_datasets(data_num=100):
             return "Could not detect language"
 
 
-    # データベースに接続
-    conn = sqlite3.connect(".\syntax-analysis\db\mydatasets.db")
 
-    # カーソルオブジェクトを作成
-    cur = conn.cursor()
-
-    # SQLクエリを実行
-    print("データベースからデータを読み込み中")
-    cur.execute('''
-        SELECT problems.problem_id, problems.problem, programs.program
-        FROM problems
-        INNER JOIN programs ON problems.problem_id = programs.problem_id
-    ''')
-
-    datas = cur.fetchall() #datas=[[id, problem, program], [id, problem, program], [id, problem, program], ...]
     datasets = []
-
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    for i, data in enumerate(tqdm(datas, postfix="データセットをデータベースからロード中")):
+    for i, data in enumerate(tqdm(data, postfix="データセットをロード中")):
         if detect_language(data[1]) == "en":
             problem_encoding = tokenizer.encode_plus(
                 data[1],
@@ -90,12 +99,8 @@ def create_datasets(data_num=100):
                 datasets.append([problem_encoding, program_encoding])
             else:
                 continue
-
-
-    # 接続を閉じる
-    conn.close()
     
-    return select_random_elements(datasets, data_num)
+    return datasets
 
 
 
@@ -221,7 +226,7 @@ def eval():
     vocab_size = 30522
 
     # データセットの読み込み
-    datasets = create_datasets(100)
+    datasets = read_data(100)
     print(datasets[0])
     exit()
     test_problems = [data[0] for data in tqdm(datasets, postfix="データセット処理中：プロブレム")]
