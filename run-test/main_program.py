@@ -1,9 +1,10 @@
 import sqlite3
 import ast
-from langdetect import detect
-from tqdm import tqdm
 import torch
 import random
+import matplotlib.pyplot as plt
+from langdetect import detect
+from tqdm import tqdm
 from torch import nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.optim import Adam
@@ -75,7 +76,7 @@ def create_datasets(data_num=100):
                 data[1],
                 truncation=True,
                 padding='max_length',
-                max_length=1024
+                max_length=512
                 )
                     
             ast_tree = code_to_ast(data[2])
@@ -85,7 +86,7 @@ def create_datasets(data_num=100):
                     feature_vector,
                     truncation=True,
                     padding='max_length',
-                    max_length=1024
+                    max_length=512
                     )
                 datasets.append([problem_encoding, program_encoding])
             else:
@@ -140,12 +141,14 @@ class Seq2SeqModel(nn.Module):
 def main():
     # 初期情報の設定
     device = "cuda"
-    num_epochs = 10
+    num_epochs = 30
     vocab_size = 30522
     padding_token_id = 0
+    loss_values = []  # 追加：損失値を保存するリスト
+    accuracy_values = []  # 追加：精度を保存するリスト
 
     # データセットの読み込み
-    datasets = create_datasets(500)
+    datasets = create_datasets(10000)
     problems = [data[0] for data in tqdm(datasets, postfix="データセット処理中：プロブレム")]
     programs = [data[1] for data in tqdm(datasets, postfix="データセット処理中：プログラム")]
 
@@ -155,10 +158,13 @@ def main():
 
     # モデルとオプティマイザの準備
     model = Seq2SeqModel().to(device)  # deviceはハードウェア（CPUまたはGPU）
-    optimizer = Adam(model.parameters(), lr=0.001)
+    optimizer = Adam(model.parameters(), lr=0.00001) #0.001
+
 
     # モデルの訓練
     for epoch in range(num_epochs):  # num_epochsはエポック数
+        total_predictions = 0
+        total_correct_predictions = 0
         for problems, programs in dataloader:
             optimizer.zero_grad()
             output = model(problems.to(device), programs.to(device))  # Move tensors to GPU
@@ -166,8 +172,61 @@ def main():
             loss.backward()
             optimizer.step()
 
+            # バッチ内の全てのサンプルに対して予測を計算
+            _, predicted = output.view(-1, vocab_size).max(dim=1)
+            # バッチ内の全てのサンプルに対して正解ラベルを取得
+            true = programs.view(-1).to(device)
+            # パディングトークンを無視して、バッチ内で予測が正解した数を計算
+            non_padding_mask = true.ne(padding_token_id)
+            correct_predictions = (predicted[non_padding_mask] == true[non_padding_mask]).sum().item()
 
-        print('Epoch:', epoch, 'Loss:', loss.item())
+            total_predictions += non_padding_mask.sum().item()
+            total_correct_predictions += correct_predictions
+
+        accuracy = total_correct_predictions / total_predictions
+        print('Epoch:', epoch, 'Loss:', loss.item(), 'Accuracy:', accuracy)
+
+        loss_values.append(loss.item())
+        accuracy_values.append(accuracy)
+
+    # for epoch in range(num_epochs):  # num_epochsはエポック数
+    #     total_loss = 0  # 追加：エポックごとの損失合計
+    #     correct_predictions = 0  # 追加：正確な予測の数
+    #     total_predictions = 0  # 追加：予測の総数
+
+    #     for problems, programs in dataloader:
+    #         optimizer.zero_grad()
+    #         output = model(problems.to(device), programs.to(device))  # Move tensors to GPU
+    #         loss = nn.CrossEntropyLoss()(output.view(-1, vocab_size), programs.to(device).view(-1))  # Move tensors to GPU
+    #         loss.backward()
+    #         optimizer.step()
+
+    #         total_loss += loss.item()
+    #         correct_predictions += (output.argmax(1) == programs.to(device)).sum().item()
+    #         total_predictions += programs.size(0)
+
+    #     epoch_loss = total_loss / len(dataloader)  # エポックごとの平均損失
+    #     epoch_accuracy = correct_predictions / total_predictions  # エポックごとの精度
+
+    #     print('Epoch:', epoch, 'Loss:', epoch_loss, 'Accuracy:', epoch_accuracy)
+
+    #     # 損失と精度を保存
+    #     loss_values.append(epoch_loss)
+    #     accuracy_values.append(epoch_accuracy)
+
+
+    # 損失と精度のグラフを表示
+    plt.figure(figsize=(12, 4))
+    plt.subplot(1, 2, 1)
+    plt.plot(loss_values, label='Loss')
+    plt.legend()
+    plt.subplot(1, 2, 2)
+    plt.plot(accuracy_values, label='Accuracy')
+    plt.legend()
+    plt.show()
+
+    # グラフを画像として保存
+    plt.savefig(f".\\run-test\\figure\\training_graph.png")
 
     # Save
     torch.save({
@@ -175,9 +234,37 @@ def main():
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': loss,
-                }, f'.\\run-test\\checkpoint\\checkpoint_100.pth')
+                }, f'.\\run-test\\checkpoint\\checkpoint_10000.pth')
     
-    torch.save(model.state_dict(), f'.\\run-test\\checkpoint\\model_100.pth')
+    torch.save(model.state_dict(), f'.\\run-test\\checkpoint\\model_10000.pth')
+
+
+def evaluate(model, dataloader, device, criterion):
+    vocab_size = 30522
+    model.eval()
+    total_loss = 0
+    with torch.no_grad():
+        for problems, programs in dataloader:
+            output = model(problems.to(device), programs.to(device))  # Move tensors to GPU
+            loss = criterion(output.view(-1, vocab_size), programs.to(device).view(-1))  # Move tensors to GPU
+            total_loss += loss.item()
+    return total_loss / len(dataloader)
+
+def generate(model, problem, tokenizer, device, max_length=512):
+    model.eval()
+    with torch.no_grad():
+        problem_encoding = tokenizer.encode_plus(
+            problem,
+            truncation=True,
+            padding='max_length',
+            max_length=max_length,
+            return_tensors='pt'
+        )
+        problem_encoding = {k: v.to(device) for k, v in problem_encoding.items()}
+        output = model.generate(**problem_encoding, max_length=max_length)
+        program = tokenizer.decode(output[0], skip_special_tokens=True)
+    return program
+
 
 def eval():
     # データセットの読み込み
