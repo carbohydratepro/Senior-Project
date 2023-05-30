@@ -129,70 +129,37 @@ class Seq2SeqDataset(Dataset):
 
 # モデルの定義
 class Seq2SeqModel(nn.Module):
-    def __init__(self):
+    def __init__(self, vocab_size=30522, hidden_size=768):
         super(Seq2SeqModel, self).__init__()
         self.encoder = BertModel.from_pretrained('bert-base-uncased')
-        self.decoder = nn.LSTM(768, 768, batch_first=True)
-        self.fc = nn.Linear(768, 30522)  # vocab_size=30522：ボキャブラリサイズ（トークンの数）
+        self.decoder = nn.LSTM(768, hidden_size, num_layers=1, batch_first=True)
+        self.fc = nn.Linear(hidden_size, vocab_size)
+        self.start_token = torch.zeros((1, 1, hidden_size))  # start_token初期化
 
-    def forward(self, input_ids, decoder_input):
+        # エンコーダの出力をデコーダの入力に変換する全結合層を追加
+        self.encoder_to_decoder = nn.Linear(768, hidden_size)
+
+    def forward(self, input_ids, decoder_input=None, h=None, c=None):
         encoder_output = self.encoder(input_ids)[0]
-        decoder_output, _ = self.decoder(encoder_output, None)  # use encoder output
+
+        if decoder_input is None:
+            decoder_input = encoder_output
+
+        # エンコーダの出力をデコーダの入力に変換
+        decoder_input = self.encoder_to_decoder(decoder_input)
+        
+        # LSTMは(hidden_state, cell_state)のタプルを返す
+        decoder_output, (h, c) = self.decoder(decoder_input, (h, c)) if h is not None and c is not None else self.decoder(decoder_input)
         output = self.fc(decoder_output)
-        return output
+
+        return output, (h, c)
 
 
-def main():
-    # 初期情報の設定
-    device = "cuda"
-    num_epochs = 10
-    vocab_size = 30522
-    padding_token_id = 0
-
-    # データセットの読み込み
-    datasets = create_datasets(500)
-    problems = [data[0] for data in tqdm(datasets, postfix="データセット処理中：プロブレム")][0:350]
-    programs = [data[1] for data in tqdm(datasets, postfix="データセット処理中：プログラム")][0:350]
-    test_problems = [data[0] for data in tqdm(datasets, postfix="データセット処理中：プロブレム")][350:500]
-    test_programs = [data[1] for data in tqdm(datasets, postfix="データセット処理中：プログラム")][350:500]
-
-    # データローダの準備
-    dataset = Seq2SeqDataset(problems, programs, padding_token_id) # problemsとprogramsはそれぞれ問題文と正答プログラムのリスト
-    dataloader = DataLoader(dataset, batch_size=2, shuffle=True, collate_fn=dataset.collate_fn)
-
-    # テストデータの準備
-    padding_token_id = 0
-    test_dataset = Seq2SeqDataset(test_problems, test_programs, padding_token_id)
-    test_dataloader = DataLoader(test_dataset, batch_size=2, shuffle=False, collate_fn=test_dataset.collate_fn)
-
-    # モデルとオプティマイザの準備
-    model = Seq2SeqModel().to(device)  # deviceはハードウェア（CPUまたはGPU）
-    optimizer = Adam(model.parameters(), lr=0.00001)
-
-    # モデルの訓練
-    for epoch in range(num_epochs):  # num_epochsはエポック数
-        for problems, programs in dataloader:
-            optimizer.zero_grad()
-            output = model(problems.to(device), programs.to(device))  # Move tensors to GPU
-            loss = nn.CrossEntropyLoss()(output.view(-1, vocab_size), programs.to(device).view(-1))  # Move tensors to GPU
-            loss.backward()
-            optimizer.step()
-
-
-        print('Epoch:', epoch, 'Loss:', loss.item())
-
-
-    # モデルの評価
-    model.state_dict()
-    criterion = nn.CrossEntropyLoss()
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    problem = test_problems[0]
-    test_loss = evaluate(model, test_dataloader, device, criterion)
-    print("loss:", test_loss)
-
-    print("problem\n", problem)
-    program = generate(model, problem, tokenizer, device)
-    print(program)
+    def generate(self, input_ids, decoder_input):
+        encoder_output = self.encoder(input_ids)[0]
+        decoder_output, _ = self.decoder(decoder_input)  # use decoder input
+        output = self.fc(decoder_output)
+        return output.argmax(2)
 
 
 def evaluate(model, dataloader, device, criterion):
@@ -216,9 +183,18 @@ def generate(model, problem, tokenizer, device, max_length=512):
             max_length=max_length,
             return_tensors='pt'
         )
-        problem_encoding = {k: v.to(device) for k, v in problem_encoding.items()}
-        output = model.generate(**problem_encoding, max_length=max_length)
-        program = tokenizer.decode(output[0], skip_special_tokens=True)
+        problem_encoding = {k: v.to(device) for k, v in problem_encoding.items() if k != 'token_type_ids' and k != 'attention_mask'} # Exclude 'token_type_ids' and 'attention_mask'
+
+        output_tokens = []
+        h, c = None, None
+        for _ in range(max_length):
+            output, (h, c) = model(problem_encoding['input_ids'], None, h, c)
+            output_token = output.argmax(2).unsqueeze(1)  # Change dimension from 1 to 2
+            output_tokens.append(output_token)
+
+        output_tokens = torch.cat(output_tokens, dim=1)
+        program = tokenizer.decode(output_tokens[0], skip_special_tokens=True)
+
     return program
 
 
@@ -238,32 +214,46 @@ def eval():
 
     # モデルの読み込み
     # Load
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-    # モデルの準備
+    # モデルとオプティマイザの準備
     model = Seq2SeqModel().to(device)  # deviceはハードウェア（CPUまたはGPU）
+    optimizer = Adam(model.parameters(), lr=0.001)
+
+    # Load on GPU
+    checkpoint = torch.load(f'.\\run-test\\checkpoint\\checkpoint_100.pth', map_location=torch.device('cuda'))
 
     # Move model to the GPU if available
-    model.load_state_dict(torch.load('.\\run-test\\checkpoint\\model_100.pth'))
- 
-    # モデルをデバイスに移動
-    model = model.to(device)
+    model.load_state_dict(checkpoint['model_state_dict'])
+
+    # Similarly, ensure that the optimizer state is on the right device
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    for state in optimizer.state.values():
+        for k, v in state.items():
+            if isinstance(v, torch.Tensor):
+                state[k] = v.to(device)
+
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    epoch = checkpoint['epoch']
+    loss = checkpoint['loss']
 
     # モデルの評価
     model.eval()  # モデルを評価モードに
+    total_loss = 0
+    total_accuracy = 0
+    vocab_size=30522
     for problems, programs in test_dataloader:
-        total_loss = 0
-        total_accuracy = 0
         with torch.no_grad():  # 勾配の計算をオフ
             output = model(problems.to(device), programs.to(device))
-            loss = nn.CrossEntropyLoss()(output.view(-1, vocab_size), programs.to(device).view(-1))
+            loss = nn.CrossEntropyLoss()(output.view(-1, vocab_size), programs.view(-1))
             total_loss += loss.item()
 
             # 予測を取得（最大値のインデックス）
             _, predicted = torch.max(output, dim=-1)
 
             # 精度を計算
-            correct = (predicted == programs.to(device)).float()  # 正解は1、不正解は0
+            correct = (predicted == programs).float()  # 正解は1、不正解は0
             accuracy = correct.sum() / len(correct)
             total_accuracy += accuracy.item()
 
@@ -271,17 +261,6 @@ def eval():
     print('Test Loss:', total_loss / len(test_dataloader))
     print('Test Accuracy:', total_accuracy / len(test_dataloader))
 
-    # モデルの評価
-    criterion = nn.CrossEntropyLoss()
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    problem = test_problems[0]
-
-    test_loss = evaluate(model, test_dataloader, device, criterion)
-    print("loss:", test_loss)
-
-    print("problem\n", problem)
-    program = generate(model, problem, tokenizer, device)
-    print(program)
 
 if __name__ == "__main__":
     eval()
