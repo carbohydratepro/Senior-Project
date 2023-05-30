@@ -141,7 +141,7 @@ class Seq2SeqModel(nn.Module):
 def main():
     # 初期情報の設定
     device = "cuda"
-    num_epochs = 30
+    num_epochs = 10
     vocab_size = 30522
     padding_token_id = 0
     loss_values = []  # 追加：損失値を保存するリスト
@@ -226,7 +226,7 @@ def main():
     plt.show()
 
     # グラフを画像として保存
-    plt.savefig(f".\\run-test\\figure\\training_graph.png")
+    plt.savefig(f".\\run-test\\figure\\training_graph10000ak.png")
 
     # Save
     torch.save({
@@ -234,9 +234,9 @@ def main():
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': loss,
-                }, f'.\\run-test\\checkpoint\\checkpoint_10000.pth')
+                }, f'.\\run-test\\checkpoint\\checkpoint_10000ak.pth')
     
-    torch.save(model.state_dict(), f'.\\run-test\\checkpoint\\model_10000.pth')
+    torch.save(model.state_dict(), f'.\\run-test\\checkpoint\\model_10000ak.pth')
 
 
 def evaluate(model, dataloader, device, criterion):
