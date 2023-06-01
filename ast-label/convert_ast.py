@@ -1,4 +1,7 @@
 import ast
+import os
+import glob
+
 
 class CustomVisitor(ast.NodeVisitor):
     def __init__(self):
@@ -32,9 +35,21 @@ def ast_to_feature_vector(ast_tree):
     return nodes, feature_vector
 
 
-def write_to_file(label, data):
+def delete_text_files(directory):
+    # 指定されたディレクトリ内のすべての.txtファイルに対するパスを取得
+    file_list = glob.glob(os.path.join(directory, '*.txt'))
+
+    # 各ファイルを削除
+    for file_path in file_list:
+        try:
+            os.remove(file_path)
+        except Exception as e:
+            print(f"Error occurred while deleting file : {file_path} . Error message : {e}")
+
+# データをファイルに書き込む関数
+def write_to_file(label, data, path):
     for i, info in enumerate(data, 1):
-        with open(f'info{i}.txt', 'w') as f:
+        with open(f'{path}\\info{i}.txt', mode='w', encoding='utf-8') as f:
             for lbl, item in zip(label, info):
                 f.write(f'{lbl}：{item}\n')
 
@@ -57,6 +72,10 @@ def main():
         # AST変換
         tree = convert_to_ast(code)
 
+        if tree is None:
+            print("Failed to convert code to AST for file:", path)
+            return [path, 0, 0, [], [], "", code]  # or however you want to handle this case
+    
         # ASTを訪問するオブジェクトを作成
         visitor = CustomVisitor()
         visitor.visit(tree)
@@ -66,7 +85,7 @@ def main():
 
         program_ast = ast.dump(tree, indent=2)
 
-        nodes, feature_vector = ast_to_feature_vector(program_ast)
+        nodes, feature_vector = ast_to_feature_vector(tree)
 
         return [path, function_definitions, function_calls, nodes, feature_vector, program_ast, code]
     
@@ -75,8 +94,12 @@ def main():
             code = f.read()
             data.append(analysis(path, code))
 
+
+    # ディレクトリリフレッシュ
+    directory = '.\\ast-label\\output_result'  # 削除したい.txtファイルが含まれるディレクトリへのパスを指定
+    delete_text_files(directory)
     # データをテキストファイルに書き込み
-    write_to_file(label, data)
+    write_to_file(label, data, directory)
 
 
 
