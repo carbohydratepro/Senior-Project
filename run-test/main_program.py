@@ -144,11 +144,12 @@ def main():
     num_epochs = 10
     vocab_size = 30522
     padding_token_id = 0
+    data_num = 0
     loss_values = []  # 追加：損失値を保存するリスト
     accuracy_values = []  # 追加：精度を保存するリスト
 
     # データセットの読み込み
-    datasets = create_datasets(10000)
+    datasets = create_datasets(data_num)
     problems = [data[0] for data in tqdm(datasets, postfix="データセット処理中：プロブレム")]
     programs = [data[1] for data in tqdm(datasets, postfix="データセット処理中：プログラム")]
 
