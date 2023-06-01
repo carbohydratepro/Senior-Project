@@ -198,8 +198,16 @@ def generate(model, problem, tokenizer, device, max_length=512):
     return program
 
 
-def eval():
+
+def tokens_to_code(tokenizer, tokens):
+    """
+    BERT tokenizerでエンコードされたトークンIDのリストを、元のコードに戻す関数
+    """
+    return tokenizer.decode(tokens)
+
+def eval2():
     vocab_size = 30522
+    generated = []
 
     # データセットの読み込み
     data = read_data(100)
@@ -213,47 +221,35 @@ def eval():
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False, collate_fn=test_dataset.collate_fn)
 
     # モデルの読み込み
-    # Load
-    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    # モデルとオプティマイザの準備
-    model = Seq2SeqModel().to(device)  # deviceはハードウェア（CPUまたはGPU）
-    optimizer = Adam(model.parameters(), lr=0.001)
+    model = Seq2SeqModel().to(device)
+    model.load_state_dict(torch.load('.\\run-test\\checkpoint\\model_ak.pth'))
 
-    # Load on GPU
-    checkpoint = torch.load(f'.\\run-test\\checkpoint\\checkpoint_100.pth', map_location=torch.device('cuda'))
+    # モデルをデバイスに移動
+    model = model.to(device)
 
-    # Move model to the GPU if available
-    model.load_state_dict(checkpoint['model_state_dict'])
-
-    # Similarly, ensure that the optimizer state is on the right device
-    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    for state in optimizer.state.values():
-        for k, v in state.items():
-            if isinstance(v, torch.Tensor):
-                state[k] = v.to(device)
-
-    model.load_state_dict(checkpoint['model_state_dict'])
-    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    epoch = checkpoint['epoch']
-    loss = checkpoint['loss']
+    # BERT tokenizerのロード
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
     # モデルの評価
-    model.eval()  # モデルを評価モードに
-    total_loss = 0
-    total_accuracy = 0
-    vocab_size=30522
+    model.eval()
     for problems, programs in test_dataloader:
-        with torch.no_grad():  # 勾配の計算をオフ
+        total_loss = 0
+        total_accuracy = 0
+        with torch.no_grad():
             output = model(problems.to(device), programs.to(device))
-            loss = nn.CrossEntropyLoss()(output.view(-1, vocab_size), programs.view(-1))
+            loss = nn.CrossEntropyLoss()(output.view(-1, vocab_size), programs.to(device).view(-1))
             total_loss += loss.item()
 
             # 予測を取得（最大値のインデックス）
             _, predicted = torch.max(output, dim=-1)
 
+            # LSTMの出力を配列に格納
+            generated.append([predicted.tolist(), tokens_to_code(tokenizer, predicted.tolist())])
+
             # 精度を計算
-            correct = (predicted == programs).float()  # 正解は1、不正解は0
+            correct = (predicted == programs.to(device)).float()
             accuracy = correct.sum() / len(correct)
             total_accuracy += accuracy.item()
 
@@ -261,6 +257,15 @@ def eval():
     print('Test Loss:', total_loss / len(test_dataloader))
     print('Test Accuracy:', total_accuracy / len(test_dataloader))
 
+    return generated
 
 if __name__ == "__main__":
-    eval()
+    generated_program = eval2()
+    while True:
+        user_input = input("input:")
+        if user_input == "q":
+            break
+        else:
+            index_num = int(user_input)
+            print("LSTM output (token IDs):", generated_program[index_num][0])
+            print("LSTM output (code):", generated_program[index_num][1])
