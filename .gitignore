@@ -17,3 +17,4 @@ syntax-analysis/db
 syntax-analysis/model
 run-test/checkpoint
 run-test/figure
+ast-label/output_result
