@@ -130,19 +130,19 @@ def eval():
     def variousDataEvaluation(): #でっかいデータから著者推定を行う関数
         evaluation_value = {'correct':0, 'incorrect':0}
         eval_results = [] #problem_id、正解数、不正解数
-        for dataset in datasets:
+        for dataset in tqdm(datasets):
             vector = vectorCalculate(model, ast_and_dfs(dataset[2]))
             result = model.dv.most_similar(vector)
             
             if dataset[0] not in [eval_result[0] for eval_result in eval_results]:
                 eval_results.append([dataset[0], 0, 0])
 
-        if result[0][0] == dataset[0]:
-            evaluation_value['correct'] += 1
-            eval_results[[eval_result[0] for eval_result in eval_results].index(dataset[0])][1] += 1
-        else:
-            evaluation_value['incorrect'] += 1
-            eval_results[[eval_result[0] for eval_result in eval_results].index(dataset[0])][2] += 1
+            if result[0][0] == dataset[0]:
+                evaluation_value['correct'] += 1
+                eval_results[[eval_result[0] for eval_result in eval_results].index(dataset[0])][1] += 1
+            else:
+                evaluation_value['incorrect'] += 1
+                eval_results[[eval_result[0] for eval_result in eval_results].index(dataset[0])][2] += 1
 
         for eval_result in eval_results:
             print(eval_result[0], ':', eval_result[1]/(eval_result[1]+eval_result[2])*100, '%')
