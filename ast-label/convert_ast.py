@@ -54,9 +54,8 @@ def write_to_file(label, data, path):
                 f.write(f'{lbl}：{item}\n')
 
 
-
 def main():
-    label = ["ファイル名", "定義されている関数の数", "関数が呼び出されている回数", "DFS", "DFS_vector", "AST", "プログラム"]
+    label = ["ファイル名", "定義されている関数の数", "関数が呼び出されている回数", "DFS", "DFS_vector", "AST\n", "プログラム\n"]
     data = []
 
     # プログラムのパス
@@ -65,7 +64,9 @@ def main():
               ".\syntax-analysis\Project_CodeNet_Python800\p00000\s044374417.py",
               ".\syntax-analysis\Project_CodeNet_Python800\p00000\s061434217.py",
               ".\syntax-analysis\Project_CodeNet_Python800\p00000\s071165995.py",
-              ".\syntax-analysis\Project_CodeNet_Python800\p00000\s080762108.py"]
+              ".\syntax-analysis\Project_CodeNet_Python800\p00000\s080762108.py",
+              ".\\test.py",
+              ".\\test2.py"]
     
     # 与えられた情報を格納してデータを一次元配列で返す関数
     def analysis(path, code):
