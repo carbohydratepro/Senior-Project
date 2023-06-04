@@ -7,6 +7,9 @@
 *.h5
 *.bak
 *.pptx
+*.tar
+*.gz
+*.bin
 memo.txt
 .ipynb_checkpoints
 .vscode
