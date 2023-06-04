@@ -65,9 +65,9 @@ def create(modelname, datasets):
         if vector is None:
             continue
         else:
-            created_data.append(TaggedDocument(vector, problem_id))
+            created_data.append(TaggedDocument(vector, [problem_id]))
 
-    model = Doc2Vec(created_data,  dm=0, vector_size=300, window=15, alpha=.025,min_alpha=.025, min_count=1, sample=1e-6)
+    model = Doc2Vec(created_data,  dm=1, vector_size=300, window=15, alpha=.025, min_alpha=.025, min_count=1, sample=1e-6)
     Model(f"{modelname}.model").save(model)
 
 
@@ -93,7 +93,7 @@ def dataVisualization(data, filename, columns):
 def main():
     # 初期情報の設定
     data_num = 100000
-    filename = './ast-label/model/PE0101'
+    filename = './ast-label/model/PE0103'
     label = ["id", "ploblem", "program"]
 
     # データセットの読み込み
@@ -107,11 +107,51 @@ def main():
     # モデルの読み込み
     model = Model(f"{filename}.model").read()
 
-    sim = model.dv.most_similar(1)
+    sim = model.dv.most_similar("p00003")
     print(sim)
     print(ratingAverage([s[1] for s in sim]))
 
+def eval():    
+    # 初期情報の設定
+    data_num = 100000
+    filename = './ast-label/model/PE0103'
+    label = ["id", "ploblem", "program"]
+
+    # データセットの読み込み
+    datasets = read_data(data_num)
+
+    # モデルの読み込み
+    model = Model(f"{filename}.model").read()
+    
+    def vectorCalculate(model, text): #引数からベクトルを求める関数
+        vector = model.infer_vector(text)
+        return vector
+    
+    def variousDataEvaluation(): #でっかいデータから著者推定を行う関数
+        evaluation_value = {'correct':0, 'incorrect':0}
+        eval_results = [] #problem_id、正解数、不正解数
+        for dataset in datasets:
+            vector = vectorCalculate(model, ast_and_dfs(dataset[2]))
+            result = model.dv.most_similar(vector)
+            
+            if dataset[0] not in [eval_result[0] for eval_result in eval_results]:
+                eval_results.append([dataset[0], 0, 0])
+
+        if result[0][0] == dataset[0]:
+            evaluation_value['correct'] += 1
+            eval_results[[eval_result[0] for eval_result in eval_results].index(dataset[0])][1] += 1
+        else:
+            evaluation_value['incorrect'] += 1
+            eval_results[[eval_result[0] for eval_result in eval_results].index(dataset[0])][2] += 1
+
+        for eval_result in eval_results:
+            print(eval_result[0], ':', eval_result[1]/(eval_result[1]+eval_result[2])*100, '%')
+
+        return evaluation_value['correct'] / (evaluation_value['correct']+evaluation_value['incorrect']) * 100
+
+    rate = variousDataEvaluation()
+    print(rate)
 
 if __name__ == "__main__":
-    main()
+    eval()
     
