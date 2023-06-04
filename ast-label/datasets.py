@@ -34,7 +34,11 @@ def read_data(data_num=100):
     # 接続を閉じる
     conn.close()
 
-    return select_random_elements(data, data_num)
+    # 指定した数がデータ数より多ければすべてのデータを返す
+    if len(data) < data_num:
+        return data
+    else:
+        return select_random_elements(data, data_num)
 
 
 def create_datasets(data):
