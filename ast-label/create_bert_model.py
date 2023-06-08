@@ -9,21 +9,29 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 
-def eval(programs, labels):
-    # 1. データの収集
-    # ラベル付けされたプログラムのデータセットを用意します。
-    # ここでは仮のデータを使用します。
-    # programs = ["program1", "program2", "program3", "program4", "program5"]
-    # labels = ["label1", "label2", "label2", "label1", "label3"]
+def eval(datasets, test_data_num=0):
+    # 学習用データ、テストデータの作成
+    train_data_num = len(datasets) - test_data_num
 
+    # データセットをプログラムとラベルに分解
+    datasets_programs = [dataset[2] for dataset in datasets]
+    datasets_labels = [dataset[0] for dataset in datasets]
 
-    # 2. 特徴量の抽出
-    # CodeBERTの事前学習モデルとトークナイザーをロードします。
+    # 学習用データの定義
+    train_programs = datasets_programs[0:train_data_num]
+    trains_labels = datasets_labels[0:train_data_num]
+
+    # テストデータの定義
+    test_programs = datasets_programs[train_data_num:-1]
+    test_labels = datasets_labels[train_data_num:-1]
+
+    # 1. 特徴量の抽出
+    # CodeBERTの事前学習モデルとトークナイザーをロード
     logging.info("Loading CodeBERT model...")
     tokenizer = AutoTokenizer.from_pretrained("microsoft/codebert-base")
     model = AutoModel.from_pretrained("microsoft/codebert-base")
 
-    # プログラムから特徴量を抽出します。
+    # プログラムから特徴量を抽出
     logging.info("Extracting features from programs...")
     features = []
     for program in tqdm(programs):
@@ -32,14 +40,16 @@ def eval(programs, labels):
         features.append(outputs.last_hidden_state[0].mean(0).detach().numpy())
     features = np.array(features)
 
-    # 3. モデルの学習
-    # ランダムフォレスト分類器を学習します。
+    
+
+    # 2. モデルの学習
+    # ランダムフォレスト分類器を学習
     logging.info("Training the classifier...")
     clf = RandomForestClassifier()
     clf.fit(features, labels)
 
-    # 4. 予測
-    # 新しいプログラムから特徴量を抽出し、ラベルを予測します。
+    # 3. 予測
+    # 新しいプログラムから特徴量を抽出し、ラベルを予測
     logging.info("Predicting the label of a new program...")
     new_program = "new program"
     inputs = tokenizer(new_program, return_tensors='pt', truncation=True, max_length=512)
@@ -51,14 +61,12 @@ def eval(programs, labels):
 
 def main():
     # 初期情報の設定
-    data_num = 100
-    label = ["id", "ploblem", "program"]
+    data_num = 1000
+    test_data_num = 200
 
     # データセットの読み込み
     datasets = read_data(data_num)
-    programs = [dataset[2] for dataset in datasets]
-    labels = [dataset[0] for dataset in datasets]
-    eval(programs, labels)
+    eval(datasets, test_data_num)
 
 
 if __name__ == "__main__":
