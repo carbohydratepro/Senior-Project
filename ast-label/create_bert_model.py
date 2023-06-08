@@ -31,14 +31,23 @@ def eval(datasets, test_data_num=0):
     tokenizer = AutoTokenizer.from_pretrained("microsoft/codebert-base")
     model = AutoModel.from_pretrained("microsoft/codebert-base")
 
-    # プログラムから特徴量を抽出
-    logging.info("Extracting features from programs...")
-    features = []
-    for program in tqdm(programs):
-        inputs = tokenizer(program, return_tensors='pt', truncation=True, max_length=512)
+    # プログラムから特徴量を抽出（学習用データ）
+    logging.info("Extracting features from train programs...")
+    train_features = []
+    for train_program in tqdm(train_programs):
+        inputs = tokenizer(train_program, return_tensors='pt', truncation=True, max_length=512)
         outputs = model(**inputs)
-        features.append(outputs.last_hidden_state[0].mean(0).detach().numpy())
-    features = np.array(features)
+        train_features.append(outputs.last_hidden_state[0].mean(0).detach().numpy())
+    train_features = np.array(train_features)
+
+    # プログラムから特徴量を抽出（テスト用データ）
+    logging.info("Extracting features from test programs...")
+    test_features = []
+    for test_program in tqdm(test_programs):
+        inputs = tokenizer(test_program, return_tensors='pt', truncation=True, max_length=512)
+        outputs = model(**inputs)
+        test_features.append(outputs.last_hidden_state[0].mean(0).detach().numpy())
+    test_features = np.array(test_features)
 
     
 
