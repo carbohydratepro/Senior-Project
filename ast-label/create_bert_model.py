@@ -5,6 +5,7 @@ from datasets import read_data
 import numpy as np
 import logging
 import torch
+import time
 
 # ログの設定
 logging.basicConfig(level=logging.INFO)
@@ -38,23 +39,33 @@ def eval(datasets, test_data_num=0):
     # プログラムから特徴量を抽出（学習用データ）
     logging.info("Extracting features from train programs...")
     train_features = []
+    start = time.perf_counter()
     for train_program in tqdm(train_programs):
         inputs = tokenizer(train_program, return_tensors='pt', truncation=True, max_length=512)
         inputs = {key: value.to(device) for key, value in inputs.items()}
         outputs = model(**inputs)
         train_features.append(outputs.last_hidden_state[0].mean(0).detach().cpu().numpy())
     train_features = np.array(train_features)
+
+    end = time.perf_counter()
+    time_result = end - start
+    logging.info(f"time:{time_result} s")
   
 
     # 2. モデルの学習
     # ランダムフォレスト分類器を学習
     logging.info("Training the classifier...")
+    start = time.perf_counter()
     clf = RandomForestClassifier()
     clf.fit(train_features, train_labels)
+    end = time.perf_counter()
+    time_result = end - start
+    logging.info(f"time:{time_result} s")
 
     # 3. 予測
     # 新しいプログラムから特徴量を抽出し、ラベルを予測
     logging.info("Predicting the label of a new program...")
+    start = time.perf_counter()
     test_features = []
     for test_program in tqdm(test_programs):
         inputs = tokenizer(test_program, return_tensors='pt', truncation=True, max_length=512)
@@ -62,6 +73,10 @@ def eval(datasets, test_data_num=0):
         outputs = model(**inputs)
         test_features.append(outputs.last_hidden_state[0].mean(0).detach().cpu().numpy().reshape(1, -1))
     test_features = np.array(test_features)
+
+    end = time.perf_counter()
+    time_result = end - start
+    logging.info(f"time:{time_result} s")
 
 
     # 4. 評価
@@ -98,7 +113,11 @@ def main():
     test_data_num = int(data_num * 0.3)
 
     # データセットの読み込み
+    start = time.perf_counter()
     datasets = read_data(data_num)
+    end = time.perf_counter()
+    time_result = end - start
+    logging.info(f"time:{time_result} s")
     eval(datasets, test_data_num)
 
 
