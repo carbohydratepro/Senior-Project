@@ -4,12 +4,16 @@ from tqdm import tqdm
 from datasets import read_data
 import numpy as np
 import logging
+import torch
 
 # ログの設定
 logging.basicConfig(level=logging.INFO)
 
 
 def eval(datasets, test_data_num=0):
+    # GPUが使用可能であるか確認し、使用可能であればGPUを、そうでなければCPUをデバイスとして設定
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
     # 学習用データ、テストデータの作成
     train_data_num = len(datasets) - test_data_num
 
@@ -29,15 +33,16 @@ def eval(datasets, test_data_num=0):
     # CodeBERTの事前学習モデルとトークナイザーをロード
     logging.info("Loading CodeBERT model...")
     tokenizer = AutoTokenizer.from_pretrained("microsoft/codebert-base")
-    model = AutoModel.from_pretrained("microsoft/codebert-base")
+    model = AutoModel.from_pretrained("microsoft/codebert-base").to(device)
 
     # プログラムから特徴量を抽出（学習用データ）
     logging.info("Extracting features from train programs...")
     train_features = []
     for train_program in tqdm(train_programs):
         inputs = tokenizer(train_program, return_tensors='pt', truncation=True, max_length=512)
+        inputs = {key: value.to(device) for key, value in inputs.items()}
         outputs = model(**inputs)
-        train_features.append(outputs.last_hidden_state[0].mean(0).detach().numpy())
+        train_features.append(outputs.last_hidden_state[0].mean(0).detach().cpu().numpy())
     train_features = np.array(train_features)
   
 
@@ -53,8 +58,9 @@ def eval(datasets, test_data_num=0):
     test_features = []
     for test_program in tqdm(test_programs):
         inputs = tokenizer(test_program, return_tensors='pt', truncation=True, max_length=512)
+        inputs = {key: value.to(device) for key, value in inputs.items()}
         outputs = model(**inputs)
-        test_features.append(outputs.last_hidden_state[0].mean(0).detach().numpy().reshape(1, -1))
+        test_features.append(outputs.last_hidden_state[0].mean(0).detach().cpu().numpy().reshape(1, -1))
     test_features = np.array(test_features)
 
 
@@ -88,8 +94,8 @@ def eval(datasets, test_data_num=0):
 
 def main():
     # 初期情報の設定
-    data_num = 100
-    test_data_num = int(data_num * 0.5)
+    data_num = 1000
+    test_data_num = int(data_num * 0.3)
 
     # データセットの読み込み
     datasets = read_data(data_num)
