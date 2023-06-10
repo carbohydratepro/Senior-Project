@@ -16,6 +16,7 @@ memo.txt
 deepcoder.egg-info
 syntax-analysis/Project_CodeNet_Python800
 syntax-analysis/Project_CodeNet
+syntax-analysis/project_code_net_python_all
 syntax-analysis/db
 syntax-analysis/model
 run-test/checkpoint
