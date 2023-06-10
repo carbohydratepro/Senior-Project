@@ -109,7 +109,7 @@ def eval(datasets, test_data_num=0):
 
 def main():
     # 初期情報の設定
-    data_num = 1000
+    data_num = 5000
     test_data_num = int(data_num * 0.3)
 
     # データセットの読み込み
