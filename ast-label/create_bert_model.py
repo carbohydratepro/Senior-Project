@@ -101,7 +101,7 @@ def eval(datasets, test_data_num=0):
     for eval_result in eval_results:
         print(eval_result[0], ':', eval_result[3], ":", "{:.2f}".format(eval_result[1]/(eval_result[1]+eval_result[2])*100))
         
-    print(len(eval_results))
+    print("ploblems:", len(eval_results))
 
     rate = evaluation_value['correct'] / (evaluation_value['correct']+evaluation_value['incorrect']) * 100
     print(rate)
