@@ -105,12 +105,10 @@ def eval(datasets, test_data_num=0):
 
     rate = evaluation_value['correct'] / (evaluation_value['correct']+evaluation_value['incorrect']) * 100
     print(rate)
+    return rate
 
 
-def main():
-    # 初期情報の設定
-    data_num = 5000
-    test_data_num = int(data_num * 0.3)
+def main(data_num, test_data_num):
 
     # データセットの読み込み
     start = time.perf_counter()
@@ -118,8 +116,11 @@ def main():
     end = time.perf_counter()
     time_result = end - start
     logging.info(f"time:{time_result} s")
-    eval(datasets, test_data_num)
+    rate = eval(datasets, test_data_num)
 
 
 if __name__ == "__main__":
+    # 初期情報の設定
+    data_num = 5000
+    test_data_num = int(data_num * 0.2)
     main()
