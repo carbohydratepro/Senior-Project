@@ -123,4 +123,4 @@ if __name__ == "__main__":
     # 初期情報の設定
     data_num = 5000
     test_data_num = int(data_num * 0.2)
-    main()
+    main(data_num, test_data_num)

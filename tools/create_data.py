@@ -67,19 +67,18 @@ def create_only_problem(data_info):
 
 def create_only_program(problem_id):
     data_set = []
-    dir_path = "./syntax-analysis/Project_CodeNet_Python800"
-
+    dir_path = f"./syntax-analysis/project_code_net_python_all/Project_CodeNet/data"
 
     for id in tqdm(problem_id, postfix="回答のデータセットを生成中"):
         problem_info = read_csv_info(f".\syntax-analysis\Project_CodeNet\metadata\{id}.csv", 1000000)
         for info in problem_info:
-            submission_id, problem_id, language, status, code_size = info[0], info[1], info[5], info[7], info[10]
-            if language == "Python3":
+            submission_id, problem_id, language, status, cpu_time, memory, code_size = info[0], info[1], info[5], info[7], info[8], info[9], info[10]
+            if language == "Python3" or language == "Python":
                 dir_name = problem_id
                 file_name = submission_id + ".py"
-                answer = read_file(dir_path, dir_name, file_name)
+                answer = read_file(dir_path, f"{dir_name}/Python/Project_CodeNet/data/{dir_name}/Python", file_name)
                 if answer != None:
-                    data_set.append([problem_id, answer, status, code_size])
+                    data_set.append([problem_id, answer, status, cpu_time, memory, code_size])
 
     return data_set
 
@@ -96,7 +95,7 @@ def main():
         ["dataset", "STRING"],
         ["problem", "TEXT"],
     ]
-    dbname = './syntax-analysis/db/mydatasets.db'
+    dbname = './syntax-analysis/db/mydatasets_all.db'
     table_name = "problems"
 
     create_db(data_set, columns, dbname, table_name)
@@ -107,6 +106,8 @@ def main():
         ["problem_id", "STRING"],
         ["program", "TEXT"],
         ["status", "STRING"],
+        ["cpu_time", "INT"],
+        ["memory", "INT"],
         ["code_size", "INT"],
     ]
     
@@ -118,16 +119,17 @@ def main():
     # 中身：[id, dataset, problem]
     data_set = create_only_program(problem_id)
     
-    dbname = './syntax-analysis/db/mydatasets.db'
+    dbname = './syntax-analysis/db/mydatasets_all.db'
     table_name = "programs"
 
     create_db(data_set, columns, dbname, table_name, relation)
 
 def check():
-    dbname = './syntax-analysis/db/coding_problems.db'
+    dbname = './syntax-analysis/db/mydatasets_all.db'
     db = Db(dbname)
     data = db.db_output()
     print(data[0])
+    print(len(data))
 
 if __name__ == "__main__":
     # データセット作成

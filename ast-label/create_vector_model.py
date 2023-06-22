@@ -127,7 +127,7 @@ def eval():
         vector = model.infer_vector(text)
         return vector
     
-    def variousDataEvaluation(): #でっかいデータから著者推定を行う関数
+    def variousDataEvaluation():
         evaluation_value = {'correct':0, 'incorrect':0}
         eval_results = [] #problem_id、正解数、不正解数、データ数
         for dataset in tqdm(datasets):
