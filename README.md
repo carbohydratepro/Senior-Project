@@ -1,5 +1,40 @@
-﻿# Senior-Project
+# 編集中
 
+# Senior-Project
+
+## Description
+
+自然言語処理や深層学習などを用いて競技プログラミングの問題と回答プログラム間の特徴量を抽出し、問題文が与えられたときに正しい解答プログラムを選択できるようにするAIを構築するというプロジェクトです。
+
+## Directory Structure
+
+以下にこのプロジェクトのディレクトリ構造とそれぞれのディレクトリやファイルの概要を示します。
+
+```
+project_name/
+│
+├── ast-label/ # 
+│ ├── output_result/ # 
+│ ├── create_bert_model.py # 
+│ ├── dcreate_data.py # IBMのProject CodeNetからデータセットを作成するプログラム
+│ └── file2.py # file2.pyの説明
+│
+├── dir2/ # dir2の説明
+│ ├── file3.py # file3.pyの説明
+│ └── file4.py # file4.pyの説明
+│
+├── dir3/ # dir3の説明
+│ ├── subdir1/ # subdir1の説明
+│ │ └── file5.py # file5.pyの説明
+│ │
+│ └── subdir2/ # subdir2の説明
+│ └── file6.py # file6.pyの説明
+│
+└── README.md # README.mdの説明
+```
+
+
+## File Description
 
 ### collect_atcoder.py
 ```text
@@ -24,37 +59,6 @@ polycoderをクローンしていろいろいじってる
 ### deepcoder-master
 ```text
 deepcoderをクローンしていろいろいじってる
-```
-
-
-## Description
-
-
-自然言語処理や深層学習などを用いて競技プログラミングの問題と回答プログラム間の特徴量を抽出し、問題文が与えられたときに正しい解答プログラムを選択できるようにするAIを構築するというプロジェクトです。
-
-## Directory Structure
-
-以下にこのプロジェクトのディレクトリ構造とそれぞれのディレクトリやファイルの概要を示します。
-
-```
-project_name/
-│
-├── dir1/ # dir1の説明
-│ ├── file1.py # file1.pyの説明
-│ └── file2.py # file2.pyの説明
-│
-├── dir2/ # dir2の説明
-│ ├── file3.py # file3.pyの説明
-│ └── file4.py # file4.pyの説明
-│
-├── dir3/ # dir3の説明
-│ ├── subdir1/ # subdir1の説明
-│ │ └── file5.py # file5.pyの説明
-│ │
-│ └── subdir2/ # subdir2の説明
-│ └── file6.py # file6.pyの説明
-│
-└── README.md # README.mdの説明
 ```
 
 ## Installation
