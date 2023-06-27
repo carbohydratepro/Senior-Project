@@ -25,3 +25,4 @@ ast-label/output_result
 ast-label/model
 gpt-suggest/*.csv
 gpt-suggest/db
+gpt-suggest/picture
