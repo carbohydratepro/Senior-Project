@@ -22,11 +22,11 @@ class Db():
         cur.close()
         conn.close()
 
-    def db_output(self):
+    def db_output(self, command):
         #データベースから値を抽出
         conn=sqlite3.connect(self.db)
         cur = conn.cursor()
-        cur.execute('SELECT * from propro')
+        cur.execute(command)
         data = cur.fetchall()
         cur.close()
         conn.close()
