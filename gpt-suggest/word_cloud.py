@@ -52,7 +52,7 @@ def main():
     dbname = './gpt-suggest/db/tuboroxn.db'
     data = get_data(dbname)
     # 使用例
-    text = data[1][-1]
+    text = data[2][-1]
     create_wordcloud(text)
 
 if __name__ == "__main__":
