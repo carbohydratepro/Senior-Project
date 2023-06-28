@@ -10,7 +10,6 @@ import time
 # ログの設定
 logging.basicConfig(level=logging.INFO)
 
-
 def eval(datasets, test_data_num=0):
     # GPUが使用可能であるか確認し、使用可能であればGPUを、そうでなければCPUをデバイスとして設定
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
