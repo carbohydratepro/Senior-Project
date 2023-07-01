@@ -46,7 +46,7 @@ def tsne_plt(documents):
 
     # Apply t-SNE to the document vectors
     logging.info("Apply t-SNE to the document vectors")
-    tsne = TSNE(n_components=2, random_state=0, perplexity=30)  # Adjust perplexity value here
+    tsne = TSNE(n_components=2, random_state=0, perplexity=100)  # Adjust perplexity value here
 
     X_tsne = tsne.fit_transform(X)
 
@@ -62,10 +62,12 @@ def tsne_plt(documents):
                     textcoords='offset points', ha='right', va='bottom')
     plt.show()
     
-    return model
+    model.save(f'./gpt-suggest/model/my_model')
     
 
-def get_similar(model, documents):
+def get_similar(documents):
+    model = Doc2Vec.load(f'./gpt-suggest/model/my_model')
+    
     # 文書IDのリストを作成
     doc_ids = list(range(len(documents)))
 
@@ -95,10 +97,10 @@ def main():
             pass
 
     
-    documents = select_random_elements(documents, 50)
-    model = tsne_plt(documents)
+    documents = select_random_elements(documents, 200)
+    # model = tsne_plt(documents)
     
-    get_similar(model, documents)
+    get_similar(documents)
     
 if __name__ == "__main__":
     main()
