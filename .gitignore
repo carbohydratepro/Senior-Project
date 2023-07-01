@@ -26,3 +26,4 @@ ast-label/model
 gpt-suggest/*.csv
 gpt-suggest/db
 gpt-suggest/picture
+gpt-suggest/model
