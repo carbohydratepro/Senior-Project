@@ -1,6 +1,8 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 from janome.tokenizer import Tokenizer
 from gdfd import gdfd
+from collections import Counter
+from operator import itemgetter
 
 
 # ストップワードの定義
@@ -18,7 +20,10 @@ stop_words = ['の', 'に', 'は', 'を', 'た', 'が', 'で', 'て', 'と', '�
               '.', '．', '，', ':', '(', ')', '、', '。', '・', '%', '『', '』', '\n','\n\n', ' ', '　', '」', '「',
               '(cid:15)', '\\', ]
 
-def tfidf(documents):
+def tfidf(documents, n=20):
+    # TF-IDF上位の単語を格納する配列
+    keywords = []
+    
     # Janomeのトークナイザーをインスタンス化
     t = Tokenizer(wakati=True)
 
@@ -30,23 +35,49 @@ def tfidf(documents):
 
     # 文書ごとに単語とそのTF-IDFスコアを表示
     for i, doc in enumerate(documents):
-        print(f"Document {i+1}: {doc[:300]}")
         # 単語とそのTF-IDFスコアを格納する辞書を作成
         word2tfidf = {word: tfidf for word, tfidf in zip(vectorizer.get_feature_names_out(), X[i].toarray()[0])}
         # スコアで降順にソート
         sorted_word2tfidf = sorted(word2tfidf.items(), key=lambda x: x[1], reverse=True)
-        # 上位10単語とそのスコアを表示
-        for word, score in sorted_word2tfidf[:20]:
-            print(f"{word} & {score}",r"\\")
-        print("\n")
+        # 上位n単語とそのスコアを表示
+        keywords.append(keyword[0] for keyword in sorted_word2tfidf[:n])
+        
+    return keywords
+
+
+def count_words(array_2d, n=5):
+    # 全ての単語をフラットなリストにする
+    flat_list = [word for sublist in array_2d for word in sublist]
+
+    # 単語の頻度をカウント
+    word_counter = Counter(flat_list)
+
+    # 単語とその頻度をタプルのリストとして取得し、頻度でソート
+    sorted_word_counts = sorted(word_counter.items(), key=itemgetter(1), reverse=True)
+
+    # 頻度がn以上の単語を格納するリスト
+    words_over_n = [word for word, count in word_counter.items() if count >= n]
+
+    return sorted_word_counts, words_over_n
+
 
 
 def main():
+    over = 5
     dbname = './gpt-suggest/db/tuboroxn.db'
-    documents = gdfd(dbname, 10)
+    documents = gdfd(dbname, 300)
     documents = [document[-1] for document in documents]
     
-    tfidf(documents)
+    keywords = tfidf(documents, 20)
+    sorted_word_counts, words_over_n = count_words(keywords, over)
+    
+    # 上位の単語とその頻度を表示
+    for word, count in sorted_word_counts:
+        print(f"Word: {word}, Count: {count}")
+
+    # 頻度がn以上の単語を表示
+    print(f"Words with frequency over {over}: {words_over_n}")
+    
     
     
     
