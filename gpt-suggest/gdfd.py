@@ -16,7 +16,8 @@ def get_data(dbname):
 # データセットからランダムに抽出する関数
 def select_random_elements(array, n):
     if n > len(array):
-        raise ValueError("n is greater than the length of the array.")
+        print("warning : n is greater than the length of the array.")
+        return array
     
     random_elements = random.sample(array, n)
     return random_elements
