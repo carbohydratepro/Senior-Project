@@ -18,7 +18,8 @@ stop_words = ['の', 'に', 'は', 'を', 'た', 'が', 'で', 'て', 'と', '�
               '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '10',
               '０', '１', '２', '３', '４', '５', '６', '７', '８', '９', '１０',
               '.', '．', '，', ':', '(', ')', '、', '。', '・', '%', '『', '』', '\n','\n\n', ' ', '　', '」', '「',
-              '(cid:15)', '\\', '>', '</', '<', '/', '％', '="', 'cid', ')(', 'p', '•', '-', ',',]
+              '(cid:15)', '\\', '>', '</', '<', '/', '％', '="', 'cid', ')(', 'p', '•', '-', ',', '（', '）',
+              '"', ');', '}', '{', '_',]
 
 def tfidf(documents, n=20):
     # TF-IDF上位の単語を格納する配列
@@ -60,7 +61,11 @@ def count_words(array_2d, n=5):
 
     return sorted_word_counts, words_over_n
 
-
+def join_sentences(sentences):
+    # 'join'関数を使って配列内のすべての文章を結合します。
+    # ' 'は各文章の間に入れるスペースを表します。
+    joined_text = ''.join(sentences)
+    return joined_text
 
 def main():
     over = 5
@@ -68,7 +73,7 @@ def main():
     documents = gdfd(dbname, 300)
     documents = [document[-1] for document in documents]
     
-    keywords = tfidf(documents, 20)
+    keywords = tfidf([join_sentences(documents)], 50)
     sorted_word_counts, words_over_n = count_words(keywords, over)
     
     # 上位の単語とその頻度を表示
