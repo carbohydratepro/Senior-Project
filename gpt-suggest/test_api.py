@@ -1,25 +1,23 @@
+import urllib.request
 import feedparser
-import re
-from sklearn.feature_extraction.text import TfidfVectorizer
 
-# arXiv APIを使用してコンピュータ科学分野の最新の論文を取得
-url = 'http://export.arxiv.org/rss/cs'
-feed = feedparser.parse(url)
+# arXiv APIのエンドポイントと検索クエリ
+base_url = 'http://export.arxiv.org/api/query?'
+search_query = 'cat:cs.AI'  # AIカテゴリーの論文を検索
+start = 0                    # 取得開始位置
+max_results = 10             # 取得する結果の数
 
-# 論文のタイトルを収集
-titles = [entry['title'] for entry in feed.entries]
+query = f'{base_url}search_query={search_query}&start={start}&max_results={max_results}'
+response = urllib.request.urlopen(query).read()
 
-# TF-IDFベクトライザーを作成
-vectorizer = TfidfVectorizer(stop_words='english')
+# レスポンスをパース
+feed = feedparser.parse(response)
 
-# タイトルからTF-IDFベクトルを計算
-tfidf = vectorizer.fit_transform(titles)
-
-# 各論文のキーワードを抽出
-keywords = []
-for vector in tfidf:
-    # TF-IDFスコアが最も高い単語を取得
-    keyword = vectorizer.get_feature_names()[vector.argmax()]
-    keywords.append(keyword)
-
-print(keywords)
+# 結果を表示
+for entry in feed.entries:
+    print('Title: ', entry.title)
+    print('Link: ', entry.link)
+    print('Published: ', entry.published)
+    print('Summary: ', entry.summary)
+    print('Authors: ', ', '.join(author.name for author in entry.authors))
+    print('\n')
