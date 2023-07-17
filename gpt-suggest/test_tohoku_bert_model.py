@@ -4,7 +4,7 @@ import torch
 import numpy as np
 
 
-keyword = "リモート"
+keyword = "道具"
 
 # 東北大学のBERTモデルとトークナイザーのロード
 tokenizer = BertJapaneseTokenizer.from_pretrained('cl-tohoku/bert-base-japanese-whole-word-masking')
