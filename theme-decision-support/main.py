@@ -1,6 +1,7 @@
 from transformers import AutoTokenizer, AutoModel, BertJapaneseTokenizer, BertModel
 import torch
 from scipy.spatial.distance import cosine
+from database import Db
 
 # 東北大学が開発した日本語BERTモデルとトークナイザーのロード
 tokenizer = AutoTokenizer.from_pretrained('cl-tohoku/bert-base-japanese-whole-word-masking')
@@ -34,6 +35,20 @@ def compute_similarity(sentence1, sentence2):
     similarity = 1 - cosine(sentence_embedding1.cpu(), sentence_embedding2.cpu())
 
     return similarity
+
+
+def main():
+    
+    dbname = './gpt-suggest/db/tuboroxn.db'
+    data = get_data(dbname)
+    # 使用例
+    text = data[2][-1]
+    
+    only_title = [d[-2] for d in data]
+    only_content = [d[-1] for d in data]
+    
+    for title, content enumerate()
+    
 
 if __name__ == "__main__":
     # 2つの文章を定義
