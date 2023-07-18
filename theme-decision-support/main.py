@@ -17,37 +17,44 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # モデルをデバイスに移動
 model = model.to(device)
 
-def compute_similarity(sentence1, sentence2):
+def sentence_to_vector(sentence):
     # 文章をトークン化し、モデルに入力できる形式に変換
-    inputs1 = tokenizer(sentence1, return_tensors='pt', truncation=True, max_length=512, padding='max_length').to(device)
-    inputs2 = tokenizer(sentence2, return_tensors='pt', truncation=True, max_length=512, padding='max_length').to(device)
+    inputs = tokenizer(sentence, return_tensors='pt', truncation=True, max_length=512, padding='max_length').to(device)
 
     # モデルを使って文章の表現を計算
     with torch.no_grad():
-        outputs1 = model(**inputs1)
-        outputs2 = model(**inputs2)
+        outputs = model(**inputs)
 
     # 最初のトークン（[CLS]トークン）の表現を取得
-    sentence_embedding1 = outputs1.last_hidden_state[0, 0]
-    sentence_embedding2 = outputs2.last_hidden_state[0, 0]
+    sentence_embedding = outputs.last_hidden_state[0, 0]
 
+    return sentence_embedding
+
+def compute_similarity(vector1, vector2):
     # コサイン類似度を計算
-    similarity = 1 - cosine(sentence_embedding1.cpu(), sentence_embedding2.cpu())
+    similarity = 1 - cosine(vector1.cpu(), vector2.cpu())
 
     return similarity
 
-
 def main():
-    
+    # データの準備
+    new_title = "量子コンピューティングにおける新たなアルゴリズム設計法とその応用"
+    new_content = """
+    この論文では、量子コンピューティングにおける新しいアルゴリズム設計法を提案します。具体的には、従来の量子アルゴリズムが解決できる問題領域を広げるため、エンタングルメントとスーパーポジションを更に効果的に活用する新手法を開発しました。
+
+この新手法は、特に量子暗号、量子機械学習、量子最適化などの応用分野において優れた結果を示します。さらに、このアルゴリズム設計法を用いた新たなハイブリッド量子古典アルゴリズムを提案し、その計算効率とスケーラビリティについて評価します。
+
+最後に、この新しいアルゴリズム設計法が、既存の量子コンピューティング技術の限界を超えて、より広範で複雑な問題に対応できる可能性を示します。本論文は、量子コンピューティングのアルゴリズム開発とその応用分野への深い理解を促進することを目指しています。
+"""
     dbname = './gpt-suggest/db/tuboroxn.db'
     data = get_data(dbname)
-    # 使用例
-    text = data[2][-1]
     
-    only_title = [d[-2] for d in data]
-    only_content = [d[-1] for d in data]
+    only_titles = [d[-2] for d in data]
+    only_contents = [d[-1] for d in data]
     
-    for title, content enumerate()
+    
+    
+
     
 
 if __name__ == "__main__":
