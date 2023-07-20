@@ -11,12 +11,12 @@ import os
 logging.basicConfig(level=logging.INFO)
 
 # 東北大学が開発した日本語BERTモデルとトークナイザーのロード
-tokenizer = AutoTokenizer.from_pretrained('cl-tohoku/bert-base-japanese-whole-word-masking')
-model = AutoModel.from_pretrained('cl-tohoku/bert-base-japanese-whole-word-masking')
+# tokenizer = AutoTokenizer.from_pretrained('cl-tohoku/bert-base-japanese-whole-word-masking')
+# model = AutoModel.from_pretrained('cl-tohoku/bert-base-japanese-whole-word-masking')
 
 # 東北大学のBERTモデルとトークナイザーのロード
-# tokenizer = BertJapaneseTokenizer.from_pretrained('bert-base-japanese-v3')
-# model = BertModel.from_pretrained('bert-base-japanese-v3')
+tokenizer = BertJapaneseTokenizer.from_pretrained('cl-tohoku/bert-base-japanese-v3')
+model = BertModel.from_pretrained('cl-tohoku/bert-base-japanese-v3')
 
 # GPUが利用可能であればGPUを、そうでなければCPUを使用
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -91,6 +91,14 @@ def main():
         "一日中ネコ動画を見続ける行為における心理的影響", # 論文としては不十分
         "量子アルゴリズムの高速化：効率的なルーチンの設計" # 一つ目と類似しているけれども概要が短いテーマを生成してください
     ]
+    details = [
+        "適当", 
+        "似ている",
+        "異なる",
+        "口調が異なる", 
+        "論文としては不十分",
+        "一つ目と類しているけれども概要が短いテーマ"
+    ]
     contents = [
         """
         この論文では、人工知能（AI）が地球の生物多様性の評価と保全にどのように貢献できるかを探ります。具体的には、ディープラーニングを用いた新しい生物種識別手法を開発し、その効果と可能性を検証します。
@@ -142,6 +150,9 @@ def main():
         """
     ]
     
+    title_content = dict(zip(contents, titles))
+    title_detail = dict(zip(titles, details))
+    
     # 計算
     new_title_vector = sentence_to_vector(new_title)
     new_content_vector = sentence_to_vector(new_content)
@@ -187,7 +198,7 @@ def main():
     print(f"title:{new_title}")
     # 上位5つのkeyとvalueを表示
     for i, (key, value) in enumerate(title_similarities.items()):
-        if i >= 5:
+        if i >= 6:
             break
         print(f"  Rank {i+1}: {key} - {value}")
     
@@ -195,10 +206,13 @@ def main():
     print(f"content:{new_content}")
     # 上位5つのkeyとvalueを表示
     for i, (key, value) in enumerate(content_similarities.items()):
-        if i >= 5:
+        if i >= 6:
             break
-        print(f"  Rank {i+1}: {key} - {value}")
+        print(f"  Rank {i+1}: {title_content[key]} - {value}")
         
+    print("\n")
+    for title in titles:
+        print(title, title_detail[title])
         
 if __name__ == "__main__":
     main()
