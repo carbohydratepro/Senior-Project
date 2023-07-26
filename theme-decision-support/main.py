@@ -11,12 +11,12 @@ import os
 logging.basicConfig(level=logging.INFO)
 
 # 東北大学が開発した日本語BERTモデルとトークナイザーのロード
-# tokenizer = AutoTokenizer.from_pretrained('cl-tohoku/bert-base-japanese-whole-word-masking')
-# model = AutoModel.from_pretrained('cl-tohoku/bert-base-japanese-whole-word-masking')
+tokenizer = AutoTokenizer.from_pretrained('cl-tohoku/bert-base-japanese-whole-word-masking')
+model = AutoModel.from_pretrained('cl-tohoku/bert-base-japanese-whole-word-masking')
 
 # 東北大学のBERTモデルとトークナイザーのロード
-tokenizer = BertJapaneseTokenizer.from_pretrained('cl-tohoku/bert-base-japanese-v3')
-model = BertModel.from_pretrained('cl-tohoku/bert-base-japanese-v3')
+# tokenizer = BertJapaneseTokenizer.from_pretrained('cl-tohoku/bert-base-japanese-v3')
+# model = BertModel.from_pretrained('cl-tohoku/bert-base-japanese-v3')
 
 # GPUが利用可能であればGPUを、そうでなければCPUを使用
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -89,7 +89,9 @@ def main():
         "持続可能な都市開発における緑地利用：心理的健康効果の実証研究", # 異なる
         "ソーシャルメディアがもたらす恋愛観の変化：現代の恋愛傾向に対する影響", # 口調が異なる
         "一日中ネコ動画を見続ける行為における心理的影響", # 論文としては不十分
-        "量子アルゴリズムの高速化：効率的なルーチンの設計" # 一つ目と類似しているけれども概要が短いテーマを生成してください
+        "量子アルゴリズムの高速化：効率的なルーチンの設計", # 一つ目と類似しているけれども概要が短いテーマを生成してください
+        "量子アルゴリズムを用いた新たな薬物探索：分子構造と活性の予測", # 応用可能な全く新しいテーマ
+        "革新的な医薬品開発：効率的な候補分子探索と活性予測" # タイトルにキーワードを含めない（量子コンピューティング, 機械学習)
     ]
     details = [
         "適当", 
@@ -97,7 +99,9 @@ def main():
         "異なる",
         "口調が異なる", 
         "論文としては不十分",
-        "一つ目と類しているけれども概要が短いテーマ"
+        "一つ目と類しているけれども概要が短いテーマ",
+        "応用可能な全く新しいテーマ",
+        "タイトルにキーワードを含めない（量子コンピューティング, 機械学習)"
     ]
     contents = [
         """
@@ -147,6 +151,20 @@ def main():
         """,
         """
         この研究では、量子アルゴリズムの効率性を向上させるための新たなルーチンを提案します。我々の方法は、アルゴリズムの計算時間を大幅に短縮し、量子コンピューティングのパフォーマンスを向上させる可能性を秘めています。
+        """,
+        """
+        本論文では、量子コンピューティングと機械学習を融合したアルゴリズムを薬物探索の分野に応用する方法を探ります。具体的には、新たな分子構造の生成とそれらの生物学的活性の予測に量子アルゴリズムを使用します。
+
+        これにより、大量の候補分子の中から新たな薬物候補を効率的に見つけ出すことが可能となり、また、その活性を予測することで薬物開発プロセスを大幅に短縮することが期待されます。
+
+        本論文の結果は、量子コンピューティングが薬物探索のフィールドで新たなパラダイムを提示することを示すもので、次世代の薬物開発に新たな道を開くことを目指しています。
+        """,
+        """
+        本研究では、薬物開発の新たなアプローチを提案します。具体的には、大量の候補分子を効率的にスクリーニングし、その中から最も有望な新薬候補を見つけ出すことを目指します。また、その分子の生物学的活性も同時に予測します。
+
+        このアプローチの特徴は、新たに開発された先端技術を活用している点にあります。この技術は、ある種の高度な計算能力を用いて、これまでにないスピードと精度で分子スクリーニングと活性予測を行うことが可能になります。
+
+        その結果、薬物開発のプロセスは大幅に加速し、また、新たな有望な治療薬を見つけ出す確率も向上します。この研究は、医薬品開発の新たな可能性を示し、次世代の薬物探索に向けた新たな道を開くことを目指しています。
         """
     ]
     
@@ -198,7 +216,7 @@ def main():
     print(f"title:{new_title}")
     # 上位5つのkeyとvalueを表示
     for i, (key, value) in enumerate(title_similarities.items()):
-        if i >= 6:
+        if i >= 8:
             break
         print(f"  Rank {i+1}: {key} - {value}")
     
@@ -206,7 +224,7 @@ def main():
     print(f"content:{new_content}")
     # 上位5つのkeyとvalueを表示
     for i, (key, value) in enumerate(content_similarities.items()):
-        if i >= 6:
+        if i >= 8:
             break
         print(f"  Rank {i+1}: {title_content[key]} - {value}")
         
