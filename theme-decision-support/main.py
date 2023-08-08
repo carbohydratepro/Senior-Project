@@ -69,24 +69,38 @@ def get_data(dbname):
 def main():
     logging.info("During data acquisition and preprocessing...")
     # データの準備
-    new_title = "量子コンピューティングにおける新たなアルゴリズム設計法とその応用"
+    new_title = "学術情報のオープンアクセスシステムによる大学の卒業研究論文の利用と情報構築"
     new_content = \
     """
-    この論文では、量子コンピューティングにおける新しいアルゴリズム設計法を提案します。具体的には、従来の量子アルゴリズムが解決できる問題領域を広げるため、エンタングルメントとスーパーポジションを更に効果的に活用する新手法を開発しました。この新手法は、特に量子暗号、量子機械学習、量子最適化などの応用分野において優れた結果を示します。さらに、このアルゴリズム設計法を用いた新たなハイブリッド量子古典アルゴリズムを提案し、その計算効率とスケーラビリティについて評価します。最後に、この新しいアルゴリズム設計法が、既存の量子コンピューティング技術の限界を超えて、より広範で複雑な問題に対応できる可能性を示します。本論文は、量子コンピューティングのアルゴリズム開発とその応用分野への深い理解を促進することを目指しています。
+    導入
+    この部分では、研究の背景と本システムの必要性について説明します。具体的には、卒業論文という重要な知識資源が限られた範囲でしか利用されていない現状と、これを公開・共有することによる学術研究の進展や社会貢献の可能性について述べます。
+
+    システム設計
+    このセクションでは、PDFを用いた公開研究情報構築システムの設計について詳細に述べます。このシステムは、卒業論文のPDFをアップロード、検索、ダウンロードが可能となるように設計されています。また、メタデータの管理、ユーザー認証、アクセス制御などの重要な機能も導入します。
+
+    使用技術
+    システムの開発には、WebフレームワークとしてPythonのFlask、データベースとしてMySQL、フルテキスト検索エンジンとしてElasticsearchを採用します。また、PDFの解析・表示には、AdobeのPDF.jsなどのライブラリを利用します。
+
+    実装と評価
+    本研究では、システムを実装し、研究室の実環境で運用・評価します。具体的には、卒業論文のアップロード数、ダウンロード数、ページビュー数などの指標を用いてシステムの利用状況と有効性を評価します。
+
+    結論
+    システムの運用と評価の結果、本システムが卒業論文の公開・利用を促進し、学術研究の進展に寄与することが確認されます。さらなる機能追加や改良の方向性についても考察します。
     """
     
-    # dbname = './gpt-suggest/db/tuboroxn.db'
-    # data = get_data(dbname)
+    dbname = './gpt-suggest/db/tuboroxn.db'
+    data = get_data(dbname)
     
-    # titles = [d[-2] for d in data]
-    # contents = [d[-1] for d in data]
+    titles = [d[-2] for d in data]
+    contents = [d[-1] for d in data]
     
-    titles = pd.read_csv("./theme-decision-support/data/titles.csv").iloc[:,0].tolist()
-    contents = pd.read_csv("./theme-decision-support/data/contents.csv").iloc[:,0].tolist()
+    # titles = pd.read_csv("./theme-decision-support/data/titles.csv").iloc[:,0].tolist()
+    # contents = pd.read_csv("./theme-decision-support/data/contents.csv").iloc[:,0].tolist()
     details = pd.read_csv("./theme-decision-support/data/details.csv").iloc[:,0].tolist()
     
-    new_title = "暗号化による安全な電子メール通信の強化：次世代暗号アルゴリズムの提案と評価"
-    new_content = "本論文では、インターネット上でのプライバシーとセキュリティを保証するために必要な、安全な電子メール通信を提供する新たな暗号化アルゴリズムの開発について報告します。初めに、現行の電子メール通信における暗号化手法の課題を明らかにし、その解決策として新しい暗号アルゴリズムの必要性を述べます。次に、我々が開発した次世代暗号アルゴリズムの設計原理と実装手法について詳細に説明します。そして、実際の電子メール通信におけるパフォーマンスとセキュリティのレベルを評価するための一連の実験結果を提示します。これらの結果は、我々の暗号アルゴリズムが既存の方法に比べて優れた安全性を提供し、かつ効率的なパフォーマンスを達成できることを示しています。"
+    print(len(titles), len(contents))
+    # new_title = "論文テーマ決め支援ツールの作成"
+    # new_content = "本論文の著者が所属する研究室では, 論文のテーマ決めに苦労している人がほとんどである. その理由として, 自身の興味のある分野を研究のテーマとして結び付けるのが難しく, また金銭面や技術面など考慮することがたくさんあり, 自分の考えたテーマが実現可能であるかを精査するのに多くの時間を要している. 研究に費やせる時間は限られている為, 失敗しないテーマ選びというのが非常に重要となってくる. そのため, 本研究では自然言語処理をはじめとする様々な手法を用いて, 研究者が円滑にテーマ決めを行えるようなツールを作成する. "
     
     title_content = dict(zip(contents, titles))
     title_detail = dict(zip(titles, details))
@@ -121,6 +135,7 @@ def main():
     # 比較計算
     title_similarities = {}
     content_similarities = {}
+    content_similarities_reverse = {}
     
     logging.info("Calculating similarity between titles...")
     for key, value in tqdm(title_vectors.items()):
@@ -132,15 +147,19 @@ def main():
         content_similarities[key] = compute_similarity(new_content_vector, value)
         content_similarities = dict(sorted(content_similarities.items(), key=lambda item: item[1], reverse=True))
         
+    for key, value in tqdm(content_vectors.items()):
+        content_similarities_reverse[key] = compute_similarity(new_content_vector, value)
+        content_similarities_reverse = dict(sorted(content_similarities.items(), key=lambda item: item[1], reverse=False))
+        
     # 結果を表示
-    print(f"title:{new_title}")
-    # 上位5つのkeyとvalueを表示
-    for i, (key, value) in enumerate(title_similarities.items()):
-        if i >= 8:
-            break
-        print(f"  Rank {i+1}: {key} - {value}")
-    
-
+    # print(f"title:{new_title}")
+    # # 上位5つのkeyとvalueを表示
+    # for i, (key, value) in enumerate(title_similarities.items()):
+    #     if i >= 8:
+    #         break
+    #     print(f"  Rank {i+1}: {key} - {value}")
+        
+        
     print(f"content:{new_title}")
     # 上位5つのkeyとvalueを表示
     for i, (key, value) in enumerate(content_similarities.items()):
@@ -149,8 +168,14 @@ def main():
         print(f"  Rank {i+1}: {title_content[key]} - {value}")
         
     print("\n")
-    for title in titles:
-        print(title, "\n   └", title_detail[title])
+    
+    # 下位5つのkeyとvalueを表示
+    for i, (key, value) in enumerate(content_similarities_reverse.items()):
+        if i >= 8:
+            break
+        print(f"  Rank {i+1}: {title_content[key]} - {value}")
+    # for title in titles:
+    #     print(title, "\n   └", title_detail[title])
         
 if __name__ == "__main__":
     main()
