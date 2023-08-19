@@ -5,6 +5,7 @@ import random
 from database import Db
 from tqdm import tqdm
 from datetime import datetime
+from mail import send_mail
 
 #IEEEのapiキー
 with open("./collect_thesis/key.txt", "r") as file:
@@ -23,9 +24,9 @@ def counter():
     return count
         
 
-def main():
-    #queryを用意
-    query = 'deep learning'
+def get_thesis():
+    err_info = []
+    
     count = counter()
     start_record = count * 200 - 199
     
@@ -90,6 +91,9 @@ def main():
     command = db.db_create_command(table_name, columns)
     db.db_input(data, command)
 
+def main():
+    get_thesis()
+    
 if __name__ == "__main__":
     for i in range(4):
         main()

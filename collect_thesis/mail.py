@@ -18,5 +18,6 @@ def send_email(subject, body):
     server.sendmail(from_email, to_email, msg.as_string())
     server.quit()
 
-# 使用例
-send_email("Test Subject", "This is a test email.")
+if __name__ == "__main__":
+    # 使用例
+    send_email("Test Subject", "This is a test email.")
