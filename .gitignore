@@ -28,5 +28,7 @@ gpt-suggest/*.csv
 gpt-suggest/db
 gpt-suggest/picture
 gpt-suggest/model
-collect_thesis
+collect_thesis/db
+collect_thesis/json
+collect_thesis/*.txt
 theme-decision-support/data
