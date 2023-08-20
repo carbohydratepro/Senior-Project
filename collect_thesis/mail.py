@@ -5,7 +5,7 @@ def send_email(subject, body):
     from_email = "mcarbon660@gmail.com"
     to_email = "masashigo0218@gmail.com"
     
-    with open("./collect_thesis/count.txt", "r") as file:
+    with open("./collect_thesis/pass.txt", "r") as file:
         password = file.read()  # 生成したApp Passwordを使用
 
     msg = MIMEText(body)

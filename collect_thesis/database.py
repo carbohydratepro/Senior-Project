@@ -113,18 +113,36 @@ def find_duplicates(arr):
     duplicates = [item for item, count in counts.items() if count > 1]
     return duplicates
 
-def check():
+def check_duplicates():
     dbname = './collect_thesis/db/ieee.db'
     command = "select * from theses"
     db = Db(dbname)
     data = db.db_output(command)
-    article_numbers = [d for d in data[3]]
+    article_numbers = [d[3] for d in data]
     
     duplicates = find_duplicates(article_numbers)
+    
     if duplicates:
-        print(f'Duplicates found: {duplicates}')
+        return duplicates
     else:
-        print('No duplicates found.')
+        return None
+    
+def count_year():
+    dbname = './collect_thesis/db/ieee.db'
+    command = "select * from theses"
+    db = Db(dbname)
+    data = db.db_output(command)
+    years = [d[4] for d in data]
+    
+    # 年号の出現回数をカウント
+    count = Counter(years)
+    
+    return count
+  
+# データベースのファイルサイズを取得する
+def get_database_size():
+    return os.path.getsize("./collect_thesis/db/ieee.db")
+  
     
 if __name__ == '__main__':
-    check()
+    print(count_year())

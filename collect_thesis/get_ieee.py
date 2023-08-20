@@ -2,10 +2,12 @@ import requests
 import json
 import os
 import random
-from database import Db
+import time
+import glob
+from database import Db, check_duplicates, count_year, get_database_size
 from tqdm import tqdm
 from datetime import datetime
-from mail import send_mail
+from mail import send_email
 
 #IEEEのapiキー
 with open("./collect_thesis/key.txt", "r") as file:
@@ -14,12 +16,13 @@ with open("./collect_thesis/key.txt", "r") as file:
 # IEEE APIのエンドポイント
 base_url = 'http://ieeexploreapi.ieee.org/api/v1/search/articles'
 
-def counter():
+def counter(count_up = True):
     with open("./collect_thesis/count.txt", "r") as file:
         count = int(file.read())
         
-    with open("./collect_thesis/count.txt", "w") as file:
-        file.write(str(count+1))
+    if count_up:
+        with open("./collect_thesis/count.txt", "w") as file:
+            file.write(str(count+1))
         
     return count
         
@@ -59,8 +62,6 @@ def get_thesis():
 
     results = results['articles']
     
-    print(len(results))
-    
     data = []
     for result in tqdm(results):
         try:
@@ -91,9 +92,78 @@ def get_thesis():
     command = db.db_create_command(table_name, columns)
     db.db_input(data, command)
 
+
+def create_mail_text(err, duplicates, years, count, dbsize, jsize):
+    mail_text = ""
+    
+    now = datetime.now()
+    today_date = now.strftime("%Y-%m-%d")
+    mail_text += today_date + "\n\n"
+    
+    for num, e in err.items():
+        mail_text += f"{num}：{e}\n"
+    
+    mail_text += "\n"
+    
+    if duplicates:
+        mail_text += "重複" + duplicates + "\n\n"
+    else:
+        mail_text += "重複なし\n\n"
+    
+    total_bars = 100
+    total_years = sum(years.values())
+
+    # 各年号の出現回数を視覚化
+    for year, freq in sorted(years.items()):
+        bars = "#" * round((freq / total_years) * total_bars)
+        mail_text += f"{year} {freq} {bars}\n"
+        
+    mail_text += "\n"
+    
+    for unit in ['bytes', 'KB', 'MB', 'GB', 'TB']:
+        if dbsize < 1024.0:
+            mail_text += f"データベースサイズ：{dbsize:.1f} {unit}\n\n"
+            break
+        dbsize /= 1024.0
+    
+    for unit in ['bytes', 'KB', 'MB', 'GB', 'TB']:
+        if jsize < 1024.0:
+            mail_text += f"バックアップファイルサイズ：{jsize:.1f} {unit}\n\n"
+            break
+        jsize /= 1024.0
+        
+    mail_text += "総実行回数：" + str(count) + "\n\n"
+        
+    return mail_text
+
 def main():
-    get_thesis()
+    # 実行状況を格納する辞書
+    run_info = {}
+    
+    # メイン処理
+    err_info = {}
+    for i in range(1):
+        try:
+            get_thesis()
+        except Exception as e:
+            err_info[i+1] = e
+            
+        time.sleep(1)
+    
+    dup_info = check_duplicates()
+    year_info = count_year()
+    
+    count = counter(count_up=False)
+    db_size = get_database_size()
+    
+    # 指定されたディレクトリとそのサブディレクトリ内の全ての.jsonファイルを取得
+    json_files = glob.glob(os.path.join('./collect_thesis/json/*.json'), recursive=True)
+    
+    # 各ファイルのサイズを合計
+    json_size = sum(os.path.getsize(file) for file in json_files)
+    
+    mail_text = create_mail_text(err_info, dup_info, year_info, count, db_size, json_size)
+    send_email("IEEE論文取得状況", mail_text)
     
 if __name__ == "__main__":
-    for i in range(4):
-        main()
+    main()
