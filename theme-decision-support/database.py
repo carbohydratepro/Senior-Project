@@ -56,3 +56,12 @@ class Db():
 
         # テーブルが存在するかどうかを返す
         return result is not None
+    
+
+def output_datasets():
+    dbname = './collect_thesis/db/ieee.db'
+    command = "select * from theses"
+    db = Db(dbname)
+    data = db.db_output(command)
+    
+    return data
