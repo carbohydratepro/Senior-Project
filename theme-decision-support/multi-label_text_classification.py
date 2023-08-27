@@ -6,6 +6,8 @@ from torch.optim import Adam
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler
 
 
+
+
 def learning(dataset):
     def encode_labels(labels, label2index):
         """ラベルをエンコード（ワンホットエンコーディング）する関数"""
@@ -16,6 +18,13 @@ def learning(dataset):
                 vec[label2index[label]] = 1
             encoded.append(vec)
         return encoded
+
+    def compute_accuracy(logits, labels):
+        probs = torch.sigmoid(logits)
+        preds = (probs > 0.5).float()
+        corrects = (preds == labels).float().sum(dim=1)
+        accuracy = corrects / labels.shape[1]
+        return accuracy.mean().item()
 
 
     texts = list(dataset.keys())
@@ -52,7 +61,7 @@ def learning(dataset):
     labels = torch.tensor(labels)
 
     # DataLoaderの作成
-    batch_size = 8
+    batch_size = 4
     data = TensorDataset(input_ids, attention_masks, labels)
     sampler = RandomSampler(data)
     dataloader = DataLoader(data, sampler=sampler, batch_size=batch_size)
@@ -70,25 +79,64 @@ def learning(dataset):
     optimizer = Adam(model.parameters(), lr=2e-5)
     loss_fn = BCEWithLogitsLoss()
 
+
+    all_losses = []  # エポック毎のlossを格納するリスト
+    all_accuracies = []  # エポック毎のaccuracyを格納するリスト
+    
     # 訓練ループ
-    num_epochs = 3
+    num_epochs = 10
+    
     for epoch in range(num_epochs):
         total_loss = 0
+        total_accuracy = 0
+        
+        accumulation_steps = 4  # 例として4ミニバッチごとにモデルのパラメータを更新する場合
+        step = 0
+        optimizer.zero_grad()   # エポックの開始時に勾配をゼロにする
+        
         for batch in dataloader:
             batch = tuple(t.to(device) for t in batch)  # バッチのデータをGPUに移動
             b_input_ids, b_input_mask, b_labels = batch
-
+            
             outputs = model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask)
             logits = outputs[0]
             loss = loss_fn(logits, b_labels.type_as(logits))
-
             loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
+            
+            if (step + 1) % accumulation_steps == 0:  # accumulation_stepsで指定したステップ毎にモデルを更新
+                optimizer.step()
+                optimizer.zero_grad()
+            
             total_loss += loss.item()
-        print(f"Epoch: {epoch}, Loss: {total_loss / len(dataloader)}")
+            total_accuracy += compute_accuracy(logits, b_labels)
+            
+        avg_loss = total_loss / len(dataloader)
+        avg_accuracy = total_accuracy / len(dataloader)
+        all_losses.append(avg_loss)
+        all_accuracies.append(avg_accuracy)
+        print(f"Epoch: {epoch}, Loss: {avg_loss}, Accuracy: {avg_accuracy}")
 
     print("Training complete.")
+
+    # LossとAccuracyのグラフをプロット
+    epochs = range(num_epochs)
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(epochs, all_losses, 'r-', label='Training Loss')
+    plt.title('Training Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend()
+
+    plt.subplot(1, 2, 2)
+    plt.plot(epochs, all_accuracies, 'b-', label='Training Accuracy')
+    plt.title('Training Accuracy')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()
 
 
 def main():
