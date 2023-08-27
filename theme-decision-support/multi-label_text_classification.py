@@ -4,8 +4,11 @@ from transformers import BertTokenizer, BertForSequenceClassification
 from torch.nn import BCEWithLogitsLoss
 from torch.optim import Adam
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler
+import matplotlib.pyplot as plt
+import logging
 
-
+# ログの設定
+logging.basicConfig(level=logging.INFO)
 
 
 def learning(dataset):
@@ -31,6 +34,7 @@ def learning(dataset):
     raw_labels = list(dataset.values())
 
     # 一意なラベルを列挙し、それぞれに一意な整数を割り当てる
+    logging.info("ラベルをベクトル化")
     all_labels = set(label for sublist in raw_labels for label in sublist)
     label2index = {label: idx for idx, label in enumerate(all_labels)}
 
@@ -42,6 +46,7 @@ def learning(dataset):
     tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-uncased")
 
     # テキストをトークン化
+    logging.info("テキストをトークン化")
     input_ids = [tokenizer.encode(text, add_special_tokens=True, max_length=512, truncation=True) for text in texts]
 
     # 最大のシーケンス長を取得
@@ -67,6 +72,11 @@ def learning(dataset):
     dataloader = DataLoader(data, sampler=sampler, batch_size=batch_size)
 
     # GPUを使用
+    if torch.cuda.is_available():
+        print("cuda OK")
+    else:
+        print("use cpu")
+        
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # モデルの初期化
@@ -140,6 +150,7 @@ def learning(dataset):
 
 
 def main():
+    logging.info("データベースからデータを取得中")
     datasets = {}
     data = output_datasets()
     
