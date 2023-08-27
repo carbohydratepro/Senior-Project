@@ -59,7 +59,7 @@ class Db():
     
 
 def output_datasets():
-    dbname = './collect_thesis/db/ieee.db'
+    dbname = './collect_thesis/db/ieee_new.db'
     command = "select * from theses"
     db = Db(dbname)
     data = db.db_output(command)
