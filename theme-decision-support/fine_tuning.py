@@ -11,6 +11,7 @@ import numpy as np
 import torch
 import logging
 import random
+import re
 
 # ログの設定
 logging.basicConfig(level=logging.INFO)
@@ -211,7 +212,7 @@ def main():
     # data = random.sample(data, 100)
 
     for d in data:
-        datasets.append([d[1], d[6].split(",")])
+        datasets.append([d[1], re.split('[ ,]', d[6])])
     
     # GPUが利用可能かを確認
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
