@@ -5,7 +5,8 @@ from spacy import displacy
 nlp = spacy.load("ja_ginza")
 
 # 解析するテキスト (例: 論文のタイトルや抄録)
-text = "関節情報の取得にOpenPoseを用いて、"
+text = "一連の手話動作画像からOpenPoseを用いて関節座標を取得する"
+# verbにかかっているobjとその周辺単語をMASKする
 
 # テキストを処理
 doc = nlp(text)
@@ -38,3 +39,7 @@ displacy.serve(doc, style="dep")
 # DET: 限定詞
 # PUNCT: 句読点
 # これらのタグは、単語の文法的なカテゴリを示します。品詞タグの完全なリストと説明はUniversal POS tags documentationで見ることができます。
+
+# 係り受け関係を用いるでもなんでもいいからキーワードを検出する
+# その後上下関係
+
