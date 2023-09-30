@@ -29,15 +29,14 @@ def extract_pos(text, target_pos):
     return extracted_words
 
 def extract_nouns(text):
-    tokens = sudachi.tokenize(mode, text)
-    nouns = [m.surface() for m in tokens if m.part_of_speech()[0] == '名詞']
-    return list(set(nouns))  # 重複を削除
+    doc = nlp(text)
+    nouns = [token.text for token in doc if token.pos_ == "NOUN"]
+    return list(set(nouns))
 
 def get_bert_embedding(word):
     inputs = bert_tokenizer(word, return_tensors="pt")
     outputs = bert_model(**inputs)
     return outputs.last_hidden_state.mean(dim=1)  # 平均プーリング
-
 
 def find_most_similar(word, text):
     word_embedding = get_bert_embedding(word)
@@ -63,7 +62,7 @@ def main():
     contents = pd.read_csv("./theme-decision-support/data/contents.csv").iloc[:,0].tolist()
     
     text = contents[198]
-    word = "コンピュータ"
+    word = "銀座"
     
     print(word)
     # target_pos = "NOUN"  # 名詞を抽出する場合
