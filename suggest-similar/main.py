@@ -11,11 +11,6 @@ import torch
 # ログの設定
 logging.basicConfig(level=logging.INFO)
 
-import spacy
-from transformers import BertTokenizer, BertModel
-from sklearn.metrics.pairwise import cosine_similarity
-import torch
-
 # GiNZAモデルをロード
 nlp = spacy.load("ja_ginza")
 
@@ -43,6 +38,7 @@ def find_most_similar(word, text):
     # 特定の単語を除外
     exclude_words = {"よう", "こと"}
     nouns = [noun for noun in extract_nouns(text) if noun not in exclude_words]
+    print(nouns)
     
     similarity_scores = []
     
@@ -62,7 +58,7 @@ def main():
     contents = pd.read_csv("./theme-decision-support/data/contents.csv").iloc[:,0].tolist()
     
     text = contents[198]
-    word = "銀座"
+    word = "検証"
     
     print(word)
     # target_pos = "NOUN"  # 名詞を抽出する場合
@@ -73,7 +69,11 @@ def main():
     top_5_words = find_most_similar(word, text)
     for idx, (word, score) in enumerate(top_5_words, start=1):
         print(f"{idx}. Word: {word}, Similarity: {score:.4f}")
- 
+        
+    for idx, (word, score) in enumerate(top_5_words, start=1):
+        print(f"　& {word} & {score:.4f} \\\\")
+        
+        
 if __name__ == "__main__":
     main()
 

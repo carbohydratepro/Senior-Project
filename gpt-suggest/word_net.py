@@ -18,7 +18,7 @@ def word_similarity_jp(word1, word2):
     return syn
 
 if __name__ == "__main__":
-    keyword = "セキュリティ"
+    keyword = "アタック"
     output = related_words(keyword)
     print(output)
 
