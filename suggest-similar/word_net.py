@@ -38,11 +38,19 @@ def related_terms(keyword, relation_type):
     
     return data
 
+def count():
+    # すべてのlemmaの数をカウント
+    all_lemmas = list(wn.all_lemma_names())
+    print(f"Total number of lemmas in WordNet: {len(all_lemmas)}")
+    
+    
 if __name__ == "__main__":
-    keyword = "電波"
-    relation = "Synonyms"
-    output = related_terms(keyword, relation)
-    print(output)
+    # keyword = "電波"
+    # relation = "Synonyms"
+    # output = related_terms(keyword, relation)
+    # print(output)
+    
+    count()
 
 
 

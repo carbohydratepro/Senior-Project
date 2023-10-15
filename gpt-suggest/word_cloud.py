@@ -6,6 +6,20 @@ from janome.tokenfilter import *
 from database import Db
 import matplotlib.pyplot as plt
 
+def search_title_indices(keyword, titles):
+    """
+    タイトルのリストからキーワードに関連するタイトルを検索する。
+
+    Parameters:
+    - keyword (str): 検索キーワード
+    - titles (list of str): 検索対象のタイトルのリスト
+
+    Returns:
+    - list of str: キーワードに関連するタイトルのリスト
+    """
+    matched_indices = [index for index, title in enumerate(titles) if keyword in title]
+    return matched_indices[0]
+
 
 def get_data(dbname):
     command = 'SELECT * from theses'
@@ -52,7 +66,14 @@ def main():
     dbname = './gpt-suggest/db/tuboroxn.db'
     data = get_data(dbname)
     # 使用例
-    text = data[2][-1]
+    
+    keyword = "手話"
+    titles = [d[-2] for d in data]
+    
+    matched_indices = search_title_indices(keyword, titles)
+    print(titles[matched_indices])
+    
+    text = data[matched_indices][-1]
     create_wordcloud(text)
 
 if __name__ == "__main__":
