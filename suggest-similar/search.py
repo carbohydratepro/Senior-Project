@@ -1,24 +1,25 @@
 import requests
 from bs4 import BeautifulSoup
 
-def get_wikipedia_paragraphs(word):
-    # WikipediaのURLを作成
-    url = f"https://ja.wikipedia.org/wiki/{word}"
-
-    # ページの内容を取得
+def get_weblio_definition(word):
+    url = f"https://www.weblio.jp/content/{word}"
     response = requests.get(url)
-    response.raise_for_status()
+    
+    if response.status_code != 200:
+        print(f"Failed to retrieve page for {word}. Status code: {response.status_code}")
+        return None
 
-    # BeautifulSoupを使用してHTMLを解析
-    soup = BeautifulSoup(response.text, 'html.parser')
+    soup = BeautifulSoup(response.content, 'html.parser')
+    
+    # Weblioのページ構造に基づいて意味を抽出
+    definition_section = soup.find('td', class_='content-explanation')
 
-    # <p>タグの内容を取得
-    paragraphs = soup.find_all('p')
-    text_content = [p.get_text().strip() for p in paragraphs]
+    if not definition_section:
+        print(f"Definition not found for {word}")
+        return None
+    
+    return definition_section.get_text()
 
-    return '\n\n'.join(text_content)
-
-# 例の実行
-word = "猫"
-paragraphs_content = get_wikipedia_paragraphs(word)
-print(paragraphs_content[:1000])  # 最初の1000文字だけ表示
+word = "例"
+definition = get_weblio_definition(word)
+print(definition)
