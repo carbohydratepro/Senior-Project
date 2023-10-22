@@ -2,7 +2,7 @@ import sqlite3
 import numpy as np
 
 def fetch_from_db(word):
-    conn = sqlite3.connect('words_embeddings.db')
+    conn = sqlite3.connect('./suggest-similar/db/words_embeddings.db')
     cursor = conn.cursor()
 
     cursor.execute("SELECT vector, error FROM word_embeddings WHERE word=?", (word,))
