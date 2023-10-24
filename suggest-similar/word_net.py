@@ -5,37 +5,31 @@ def related_terms(keyword, relation_type):
     data = set()
     
     for x in wn.synsets(keyword, lang="jpn"):
-        if relation_type == "Synonyms":
+        if relation_type == "Synonyms": # 同義語
             data = data.union(set(x.lemma_names(lang='jpn')))
         
-        elif relation_type == "Antonyms":
+        elif relation_type == "Antonyms": # 反義語
             for lemma in x.lemmas(lang="jpn"):
                 antonyms = lemma.antonyms()
                 for antonym in antonyms:
                     data = data.union(set(antonym.name()))
         
-        elif relation_type == "Hypernyms":
+        elif relation_type == "Hypernyms": # 上位語
             hypernyms = x.hypernyms()
             for hypernym in hypernyms:
                 data = data.union(set(hypernym.lemma_names(lang='jpn')))
         
-        elif relation_type == "Hyponyms":
+        elif relation_type == "Hyponyms": # 下位語
             hyponyms = x.hyponyms()
             for hyponym in hyponyms:
                 data = data.union(set(hyponym.lemma_names(lang='jpn')))
                 
-        elif relation_type == "Holonyms":
+        elif relation_type == "Holonyms": # 全体語
             holonyms = x.member_holonyms() + x.part_holonyms() + x.substance_holonyms()
             for holonym in holonyms:
                 data = data.union(set(holonym.lemma_names(lang='jpn')))
         
-        elif relation_type == "Meronyms":
-            meronyms = x.member_meronyms() + x.part_meronyms() + x.substance_meronyms()
-            for meronym in meronyms:
-                data = data.union(set(meronym.lemma_names(lang='jpn')))
-        
-        # 他の関係性も追加できますが、基本的なもののみをここに示しています。
-    
+
     return data
 
 def count():
@@ -45,12 +39,16 @@ def count():
     
     
 if __name__ == "__main__":
-    # keyword = "電波"
-    # relation = "Synonyms"
-    # output = related_terms(keyword, relation)
-    # print(output)
+    keyword = "動物"
+    # relation = "Synonyms" # 同義語
+    # relation = "Antonyms" # 反義語
+    relation = "Hypernyms" # 上位語
+    # relation = "Hyponyms" # 下位語
+    # relation = "Holonyms" # 全体語
+    output = related_terms(keyword, relation)
+    print(output)
     
-    count()
+    # count()
 
 
 

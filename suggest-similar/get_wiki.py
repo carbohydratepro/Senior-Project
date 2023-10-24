@@ -2,6 +2,20 @@ import requests
 from bs4 import BeautifulSoup
 from googletrans import Translator
 
+def chunk_text(text, max_bytes=5000):
+    """テキストをバイトサイズに基づいてチャンクに分割する"""
+    bytes_text = text.encode('utf-8')
+    start = 0
+    chunks = []
+    while start < len(bytes_text):
+        end = start + max_bytes
+        # バイト列を文字列にデコードして、最後の完全な文を見つける
+        chunk = bytes_text[start:end].decode('utf-8', 'ignore').rsplit('.', 1)[0] + '.'
+        chunks.append(chunk)
+        start += len(chunk.encode('utf-8'))
+    return chunks
+
+
 def get_wikipedia_paragraphs(word):
     # 英語WikipediaのURLを作成
     en_url = f"https://en.wikipedia.org/wiki/{word}"
@@ -26,9 +40,13 @@ def get_wikipedia_paragraphs(word):
         # 翻訳オブジェクトを作成
         translator = Translator()
         
-        # 英文を日本語に翻訳
-        translated_text = translator.translate(content, src='en', dest='ja').text
-        return translated_text, None
+        chunks = chunk_text(content)
+        filtered_chunks = []
+        for chunk in chunks:
+            translated_text = translator.translate(chunk, src='en', dest='ja').text
+            filtered_chunks.append(''.join(translated_text))
+
+        return ''.join(filtered_chunks), None
     
     # 日本語のWikipediaでページの内容を取得
     content, error = fetch_content(ja_url)
@@ -38,6 +56,6 @@ def get_wikipedia_paragraphs(word):
     return None, "Failed to fetch content from both English and Japanese Wikipedia."
 
 # サンプルの単語でテスト
-word = "Python"
+word = "日本語"
 content, error = get_wikipedia_paragraphs(word)
 print(content if content else error)
