@@ -5,26 +5,16 @@ import nltk
 import time
 import spacy
 import os
+import numpy as np
 from nltk.corpus import wordnet as wn
 from bs4 import BeautifulSoup
 from transformers import BertJapaneseTokenizer, BertModel
 from tqdm import tqdm
+from googletrans import Translator
 
-
-# ベクトル化の方法を検討
 
 # GPUの利用可能性を確認
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-def save_progress(index):
-    with open("./suggest-similar/progress.txt", "w") as f:
-        f.write(str(index))
-
-def load_progress():
-    if os.path.exists("./suggest-similar/progress.txt"):
-        with open("./suggest-similar/progress.txt", "r") as f:
-            return int(f.read().strip())
-    return 0
 
 def initialize_bert_model():
     model_name = 'cl-tohoku/bert-base-japanese-whole-word-masking'
@@ -72,41 +62,60 @@ def get_word_embedding(tokenizer, model, sentence):
     except Exception as e:
         return None, str(e)
 
-def initialize_db():
-    conn = sqlite3.connect('./suggest-similar/db/words_embeddings.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS word_embeddings (
-        word TEXT PRIMARY KEY,
-        vector BLOB,
-        error TEXT
-    )
-    ''')
-    return conn, cursor
 
-def save_to_db(cursor, word, vector, error):
-    cursor.execute("INSERT OR REPLACE INTO word_embeddings (word, vector, error) VALUES (?, ?, ?)", 
-                   (word, vector.tobytes() if vector is not None else None, error))
+def chunk_text(text, max_bytes=5000):
+    """テキストをバイトサイズに基づいてチャンクに分割する"""
+    bytes_text = text.encode('utf-8')
+    start = 0
+    chunks = []
+    while start < len(bytes_text):
+        end = start + max_bytes
+        # バイト列を文字列にデコードして、最後の完全な文を見つける
+        chunk = bytes_text[start:end].decode('utf-8', 'ignore').rsplit('.', 1)[0] + '.'
+        chunks.append(chunk)
+        start += len(chunk.encode('utf-8'))
+    return chunks
+
 
 def get_wikipedia_paragraphs(word):
-    # WikipediaのURLを作成
-    url = f"https://ja.wikipedia.org/wiki/{word}"
+    # 英語WikipediaのURLを作成
+    en_url = f"https://en.wikipedia.org/wiki/{word}"
+    
+    # 日本語WikipediaのURLを作成
+    ja_url = f"https://ja.wikipedia.org/wiki/{word}"
+    
+    def fetch_content(url):
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, 'html.parser')
+            paragraphs = soup.find_all('p')
+            text_content = [p.get_text().strip() for p in paragraphs]
+            return '\n\n'.join(text_content), None
+        except Exception as e:
+            return None, str(e)
+    
+    # 英語のWikipediaでページの内容を取得
+    content, error = fetch_content(en_url)
+    if content:
+        # 翻訳オブジェクトを作成
+        translator = Translator()
+        
+        chunks = chunk_text(content)
+        filtered_chunks = []
+        for chunk in chunks:
+            translated_text = translator.translate(chunk, src='en', dest='ja').text
+            filtered_chunks.append(''.join(translated_text))
 
-    # ページの内容を取得
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
+        return ''.join(filtered_chunks), None
+    
+    # 日本語のWikipediaでページの内容を取得
+    content, error = fetch_content(ja_url)
+    if content:
+        return content, None
+    
+    return None, "Failed to fetch content from both English and Japanese Wikipedia."
 
-        # BeautifulSoupを使用してHTMLを解析
-        soup = BeautifulSoup(response.text, 'html.parser')
-
-        # <p>タグの内容を取得
-        paragraphs = soup.find_all('p')
-        text_content = [p.get_text().strip() for p in paragraphs]
-
-        return '\n\n'.join(text_content), None
-    except Exception as e:
-        return None, str(e)
 
 def cosine_similarity(vec1, vec2):
     dot_product = np.dot(vec1, vec2)
@@ -121,32 +130,53 @@ def similarity_percentage(vec1, vec2):
 
 def main():
     tokenizer, model = initialize_bert_model()
-    conn, cursor = initialize_db()
     
-    done_num = int(load_progress())
+    words = ["回帰型ニューラルネットワーク", "Recurrent_neural_network", "Long_short-term_memory", "Wi-Fi"]
+    rows = []
     
-    # WordNetからすべてのlemma（単語）を取得
-    all_lemmas = list(wn.all_lemma_names(lang="jpn"))[done_num:]
-
-    BATCH_SIZE = 100  # 100単語を処理するごとにコミット
-    for i, lemma in enumerate(tqdm(all_lemmas)):
-        wikipedia_text, wiki_error = get_wikipedia_paragraphs(lemma)
+    for word in words:
+        wikipedia_text, wiki_error = get_wikipedia_paragraphs(word)
         if wikipedia_text:
             wikipedia_text = remove_unnecessary_words(wikipedia_text)
             vector, bert_error = get_word_embedding(tokenizer, model, wikipedia_text)
         else:
             vector, bert_error = None, None
-        combined_error = "; ".join(filter(None, [wiki_error, bert_error]))
-        save_to_db(cursor, lemma, vector, combined_error)
-        
-        # 一定数の単語を処理したらコミットと進捗の表示
-        if i % BATCH_SIZE == 0:
-            conn.commit()
-            save_progress(done_num+i)
+            print(f"{word} is not find from wiki.")
             
+        rows.append([word, vector])
+        print(f"{word} is ok.")
+    
+    while True:
+        target_word = input("input_word:")
+        if target_word == "command_exit":
+            exit()
         
-    conn.commit()
-    conn.close()
+        wikipedia_text, wiki_error = get_wikipedia_paragraphs(target_word)
+        if wikipedia_text:
+            wikipedia_text = remove_unnecessary_words(wikipedia_text)
+            target_vector, bert_error = get_word_embedding(tokenizer, model, wikipedia_text)
+        else:
+            target_vector, bert_error = None, None
+            print("target word is not find from wiki.")
+            continue
+
+        word_sim = []
+        for i, row in enumerate(tqdm(rows)):
+            word, vector = row
+            sim_percent = similarity_percentage(target_vector, vector)
+            word_sim.append([word, sim_percent])
+            
+        print(f"word:{target_word}")
+
+        sorted_data = sorted(word_sim, key=lambda x: x[1], reverse=True)
+        top_10 = sorted_data[:10]
+        for result in top_10:
+            word, per = result
+            print(f"{word}:{per}")
 
 if __name__ == "__main__":
     main()
+
+
+# メディアパイプ　オープンポーズ
+# RNN LSTM
