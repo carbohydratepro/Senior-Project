@@ -63,16 +63,18 @@ def get_word_embedding(tokenizer, model, sentence):
         return None, str(e)
 
 
-def chunk_text(text, max_bytes=5000):
+def chunk_text(text, max_bytes=5000, min_bytes=100):
     """テキストをバイトサイズに基づいてチャンクに分割する"""
     bytes_text = text.encode('utf-8')
     start = 0
     chunks = []
     while start < len(bytes_text):
         end = start + max_bytes
-        # バイト列を文字列にデコードして、最後の完全な文を見つける
         chunk = bytes_text[start:end].decode('utf-8', 'ignore').rsplit('.', 1)[0] + '.'
-        chunks.append(chunk)
+        if len(chunk.encode('utf-8')) < min_bytes and chunks:  # if the chunk is too small, append to the previous chunk
+            chunks[-1] += chunk
+        else:
+            chunks.append(chunk)
         start += len(chunk.encode('utf-8'))
     return chunks
 
@@ -104,8 +106,18 @@ def get_wikipedia_paragraphs(word):
         chunks = chunk_text(content)
         filtered_chunks = []
         for chunk in chunks:
-            translated_text = translator.translate(chunk, src='en', dest='ja').text
-            filtered_chunks.append(''.join(translated_text))
+            try:
+                translated_text = translator.translate(chunk, src='en', dest='ja').text
+                filtered_chunks.append(''.join(translated_text))
+            except Exception as e:  # if there's an error with the current chunk size, try splitting further
+                print(len(chunk.encode('utf-8')))
+                smaller_chunks = chunk_text(chunk, max_bytes=len(chunk.encode('utf-8'))//2)
+                for small_chunk in smaller_chunks:
+                    try:
+                        translated_text = translator.translate(small_chunk, src='en', dest='ja').text
+                        filtered_chunks.append(''.join(translated_text))
+                    except:
+                        continue
 
         return ''.join(filtered_chunks), None
     
@@ -131,7 +143,7 @@ def similarity_percentage(vec1, vec2):
 def main():
     tokenizer, model = initialize_bert_model()
     
-    words = ["回帰型ニューラルネットワーク", "Recurrent_neural_network", "Long_short-term_memory", "Wi-Fi"]
+    words = ["Long_short-term_memory", "回帰型ニューラルネットワーク", "Recurrent_neural_network", "Wi-Fi"]
     rows = []
     
     for word in words:
