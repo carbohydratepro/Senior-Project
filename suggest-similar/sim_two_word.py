@@ -110,9 +110,9 @@ def get_wikipedia_paragraphs(word):
                 translated_text = translator.translate(chunk, src='en', dest='ja').text
                 filtered_chunks.append(''.join(translated_text))
             except Exception as e:  # if there's an error with the current chunk size, try splitting further
-                print(len(chunk.encode('utf-8')))
                 smaller_chunks = chunk_text(chunk, max_bytes=len(chunk.encode('utf-8'))//2)
                 for small_chunk in smaller_chunks:
+                    print(len(small_chunk.encode('utf-8')))
                     try:
                         translated_text = translator.translate(small_chunk, src='en', dest='ja').text
                         filtered_chunks.append(''.join(translated_text))
@@ -192,3 +192,6 @@ if __name__ == "__main__":
 
 # メディアパイプ　オープンポーズ
 # RNN LSTM
+
+
+HORIZONalヲ用いて・・
