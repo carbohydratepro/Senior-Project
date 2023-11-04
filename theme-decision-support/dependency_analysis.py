@@ -5,7 +5,7 @@ from spacy import displacy
 nlp = spacy.load("ja_ginza")
 
 # 解析するテキスト (例: 論文のタイトルや抄録)
-text = "一連の手話動作画像からOpenPoseを用いて関節座標を取得する"
+text = "webニュース記事からの重要語抽出"
 # verbにかかっているobjとその周辺単語をMASKする
 
 # テキストを処理
