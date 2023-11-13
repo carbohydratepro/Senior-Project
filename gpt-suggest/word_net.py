@@ -39,8 +39,8 @@ def related_terms(keyword, relation_type):
     return data
 
 if __name__ == "__main__":
-    keyword = "電波"
-    relation = "Synonyms"
+    keyword = "肉食動物"
+    relation = "Hypernyms"
     output = related_terms(keyword, relation)
     print(output)
 

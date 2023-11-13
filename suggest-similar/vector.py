@@ -121,6 +121,7 @@ def main():
     
 
     sim_percent = similarity_percentage(embedding1, embedding2)
+    print(embedding1)
     print(f"Similarity: {sim_percent:.2f}%")
 
 

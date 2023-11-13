@@ -5,7 +5,7 @@ from spacy import displacy
 nlp = spacy.load("ja_ginza")
 
 # 解析するテキスト (例: 論文のタイトルや抄録)
-text = "webニュース記事からの重要語抽出"
+text = "ARを用いた観光情報提示Androidアプリケーション"
 # verbにかかっているobjとその周辺単語をMASKする
 
 # テキストを処理
@@ -43,3 +43,4 @@ displacy.serve(doc, style="dep")
 # 係り受け関係を用いるでもなんでもいいからキーワードを検出する
 # その後上下関係
 
+# http://127.0.0.0:8000

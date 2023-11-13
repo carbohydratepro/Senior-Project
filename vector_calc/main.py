@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 from transformers import BertJapaneseTokenizer, BertModel
 from tqdm import tqdm
 from googletrans import Translator
+from mask import predict_masked_token
 
 
 # GPUの利用可能性を確認
@@ -63,18 +64,16 @@ def get_word_embedding(tokenizer, model, sentence):
         return None, str(e)
 
 
-def chunk_text(text, max_bytes=5000, min_bytes=100):
+def chunk_text(text, max_bytes=5000):
     """テキストをバイトサイズに基づいてチャンクに分割する"""
     bytes_text = text.encode('utf-8')
     start = 0
     chunks = []
     while start < len(bytes_text):
         end = start + max_bytes
+        # バイト列を文字列にデコードして、最後の完全な文を見つける
         chunk = bytes_text[start:end].decode('utf-8', 'ignore').rsplit('.', 1)[0] + '.'
-        if len(chunk.encode('utf-8')) < min_bytes and chunks:  # if the chunk is too small, append to the previous chunk
-            chunks[-1] += chunk
-        else:
-            chunks.append(chunk)
+        chunks.append(chunk)
         start += len(chunk.encode('utf-8'))
     return chunks
 
@@ -106,18 +105,8 @@ def get_wikipedia_paragraphs(word):
         chunks = chunk_text(content)
         filtered_chunks = []
         for chunk in chunks:
-            try:
-                translated_text = translator.translate(chunk, src='en', dest='ja').text
-                filtered_chunks.append(''.join(translated_text))
-            except Exception as e:  # if there's an error with the current chunk size, try splitting further
-                smaller_chunks = chunk_text(chunk, max_bytes=len(chunk.encode('utf-8'))//2)
-                for small_chunk in smaller_chunks:
-                    print(len(small_chunk.encode('utf-8')))
-                    try:
-                        translated_text = translator.translate(small_chunk, src='en', dest='ja').text
-                        filtered_chunks.append(''.join(translated_text))
-                    except:
-                        continue
+            translated_text = translator.translate(chunk, src='en', dest='ja').text
+            filtered_chunks.append(''.join(translated_text))
 
         return ''.join(filtered_chunks), None
     
@@ -140,51 +129,48 @@ def similarity_percentage(vec1, vec2):
     # コサイン類似度を0から1の範囲に変換して、0から100の範囲にスケーリング
     return (sim + 1) / 2 * 100
 
+
+    
+def find_sim(target_vector, rows):
+    word_sim = []
+    for i, row in enumerate(tqdm(rows)):
+        word, vector_blob = row
+        vector = np.frombuffer(vector_blob, dtype=np.float32)
+        sim_percent = similarity_percentage(target_vector, vector)
+        word_sim.append([word, sim_percent])
+
+    sorted_data = sorted(word_sim, key=lambda x: x[1], reverse=True)
+    top_10 = sorted_data[:10]
+    return top_10
+
+def return_vector(target_word, tokenizer, model):
+    wikipedia_text, wiki_error = get_wikipedia_paragraphs(target_word)
+    if wikipedia_text:
+        wikipedia_text = remove_unnecessary_words(wikipedia_text)
+        target_vector, bert_error = get_word_embedding(tokenizer, model, wikipedia_text)
+        return target_vector
+    else:
+        target_vector, bert_error = None, None
+        return None
+    
+        
 def main():
     tokenizer, model = initialize_bert_model()
     
-    words = ["Long_short-term_memory", "回帰型ニューラルネットワーク", "Recurrent_neural_network", "Wi-Fi"]
-    rows = []
-    
-    for word in words:
-        wikipedia_text, wiki_error = get_wikipedia_paragraphs(word)
-        if wikipedia_text:
-            wikipedia_text = remove_unnecessary_words(wikipedia_text)
-            vector, bert_error = get_word_embedding(tokenizer, model, wikipedia_text)
-        else:
-            vector, bert_error = None, None
-            print(f"{word} is not find from wiki.")
-            
-        rows.append([word, vector])
-        print(f"{word} is ok.")
-    
-    while True:
-        target_word = input("input_word:")
-        if target_word == "command_exit":
-            exit()
-        
-        wikipedia_text, wiki_error = get_wikipedia_paragraphs(target_word)
-        if wikipedia_text:
-            wikipedia_text = remove_unnecessary_words(wikipedia_text)
-            target_vector, bert_error = get_word_embedding(tokenizer, model, wikipedia_text)
-        else:
-            target_vector, bert_error = None, None
-            print("target word is not find from wiki.")
-            continue
+    # Connect to the database
+    conn = sqlite3.connect('./suggest-similar/db/words_embeddings.db')
+    cursor = conn.cursor()
 
-        word_sim = []
-        for i, row in enumerate(tqdm(rows)):
-            word, vector = row
-            sim_percent = similarity_percentage(target_vector, vector)
-            word_sim.append([word, sim_percent])
-            
-        print(f"word:{target_word}")
+    # Fetch all the records where vector is not NULL
+    cursor.execute("SELECT word, vector FROM word_embeddings WHERE vector IS NOT NULL")
+    rows = cursor.fetchall()
+    
 
-        sorted_data = sorted(word_sim, key=lambda x: x[1], reverse=True)
-        top_10 = sorted_data[:10]
-        for result in top_10:
-            word, per = result
-            print(f"{word}:{per}")
+    target_vector = return_vector("コンセント", tokenizer, model)
+    top_10 = find_sim(target_vector, rows)
+    for result in top_10:
+        word, per = result
+        print(f"{word}:{per}")
 
 if __name__ == "__main__":
     main()
@@ -192,6 +178,3 @@ if __name__ == "__main__":
 
 # メディアパイプ　オープンポーズ
 # RNN LSTM
-
-
-# HORIZONalヲ用いて・・

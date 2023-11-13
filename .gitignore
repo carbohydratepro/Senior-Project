@@ -33,3 +33,5 @@ collect_thesis/json
 collect_thesis/*.txt
 theme-decision-support/data
 suggest-similar/db
+*.bz2
+text
