@@ -153,6 +153,17 @@ def return_vector(target_word, tokenizer, model):
         target_vector, bert_error = None, None
         return None
     
+
+# ベクトル演算を行う関数
+def vector_arithmetic(vector1, vector2, eq):
+    if eq == 'plus':
+        vector = vector1 + vector2
+    elif eq == 'minas':
+        vector = vector1 - vector2
+    else:
+        print('calcerror')
+        exit()
+    return vector
         
 def main():
     tokenizer, model = initialize_bert_model()
@@ -166,7 +177,13 @@ def main():
     rows = cursor.fetchall()
     
 
-    target_vector = return_vector("コンセント", tokenizer, model)
+    word1, word2, word3 = "機械学習", "計算", "電車"
+    vector1, vector2, vector3 = return_vector(word1, tokenizer, model), return_vector(word2, tokenizer, model), return_vector(word3, tokenizer, model)
+    
+    target_vector = vector_arithmetic(vector1, vector3, 'plus')
+    target_vector = vector_arithmetic(target_vector, vector2, 'minas')
+    # target_vector = return_vector("女王", tokenizer, model)
+    
     top_10 = find_sim(target_vector, rows)
     for result in top_10:
         word, per = result

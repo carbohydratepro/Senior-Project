@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 from transformers import BertJapaneseTokenizer, BertModel
 from tqdm import tqdm
 from googletrans import Translator
+from mask import predict_masked_token
 
 
 # GPUの利用可能性を確認
@@ -128,47 +129,107 @@ def similarity_percentage(vec1, vec2):
     # コサイン類似度を0から1の範囲に変換して、0から100の範囲にスケーリング
     return (sim + 1) / 2 * 100
 
+
+    
+def find_sim(target_vector, rows):
+    word_sim = []
+    for i, row in enumerate(tqdm(rows)):
+        word, vector_blob = row
+        vector = np.frombuffer(vector_blob, dtype=np.float32)
+        sim_percent = similarity_percentage(target_vector, vector)
+        word_sim.append([word, sim_percent])
+
+    sorted_data = sorted(word_sim, key=lambda x: x[1], reverse=True)
+    top_10 = sorted_data[:10]
+    return top_10
+
+def return_vector(target_word, tokenizer, model):
+    wikipedia_text, wiki_error = get_wikipedia_paragraphs(target_word)
+    if wikipedia_text:
+        wikipedia_text = remove_unnecessary_words(wikipedia_text)
+        target_vector, bert_error = get_word_embedding(tokenizer, model, wikipedia_text)
+        return target_vector
+    else:
+        target_vector, bert_error = None, None
+        return None
+    
+
+def create_table(cursor):
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS difference_vectors (
+            id INTEGER PRIMARY KEY,
+            word1 TEXT NOT NULL,
+            word2 TEXT NOT NULL,
+            vector BLOB NOT NULL
+        )
+    ''')
+
+def store_difference_vector(cursor, word1, word2, diff_vector):
+    vector_blob = diff_vector.tobytes()
+    cursor.execute("INSERT INTO difference_vectors (word1, word2, vector) VALUES (?, ?, ?)",
+                   (word1, word2, vector_blob))
+    
+    
+# ベクトル演算を行う関数
+def vector_arithmetic(vector1, vector2, eq):
+    if eq == 'plus':
+        vector = vector1 + vector2
+    elif eq == 'minas':
+        vector = vector1 - vector2
+    else:
+        print('calcerror')
+        exit()
+    return vector
+    
 def main():
+    def calc_diff_pairs(cursor, rows):
+        for i in tqdm(range(len(rows))):
+            for j in range(len(rows)):
+                vec1 = np.frombuffer(rows[i][1], dtype=np.float32)
+                vec2 = np.frombuffer(rows[j][1], dtype=np.float32)
+                diff_vector = vec1 - vec2
+                
+                # 差分ベクトルをデータベースに保存
+                store_difference_vector(cursor, rows[i][0], rows[j][0], diff_vector)
+
+            # 変更をコミット
+            conn.commit()
+
+
+    tokenizer, model = initialize_bert_model()
+    
     # Connect to the database
     conn = sqlite3.connect('./suggest-similar/db/words_embeddings.db')
     cursor = conn.cursor()
 
     # Fetch all the records where vector is not NULL
-    cursor.execute("SELECT word, vector FROM word_embeddings WHERE vector IS NOT NULL")
+    cursor.execute("SELECT word1, word2, vector FROM difference_vectors")
     rows = cursor.fetchall()
     
-    tokenizer, model = initialize_bert_model()
+    # データベースを閉じる
+    conn.close()
     
-    while True:
-        target_word = input("input_word:")
-        if target_word == "command_exit":
-            exit()
+    
+    word1, word2 = "機械学習", "計算"
+    
+    vector1, vector2 = return_vector(word1, tokenizer, model), return_vector(word2, tokenizer, model)
+    
+    target_vector = vector_arithmetic(vector1, vector2, 'minas')
+
+    top_10 = find_sim(target_vector, rows)
+    for result in top_10:
+        word, per = result
+        print(f"{word}:{per}")
+
+    target_vector = vector_arithmetic(vector2, vector1, 'minas')
+
+    top_10 = find_sim(target_vector, rows)
+    for result in top_10:
+        word, per = result
+        print(f"{word}:{per}")
         
-        wikipedia_text, wiki_error = get_wikipedia_paragraphs(target_word)
-        if wikipedia_text:
-            wikipedia_text = remove_unnecessary_words(wikipedia_text)
-            target_vector, bert_error = get_word_embedding(tokenizer, model, wikipedia_text)
-        else:
-            target_vector, bert_error = None, None
-            print("target word is not find from wiki.")
-            continue
-
-        word_sim = []
-        for i, row in enumerate(tqdm(rows)):
-            word, vector_blob = row
-            vector = np.frombuffer(vector_blob, dtype=np.float32)
-            sim_percent = similarity_percentage(target_vector, vector)
-            word_sim.append([word, sim_percent])
-            
-        print(f"word:{target_word}")
-
-        sorted_data = sorted(word_sim, key=lambda x: x[1], reverse=True)
-        top_10 = sorted_data[:30]
-        for result in top_10:
-            word, per = result
-            print(f"{word}:{per}")
-
 if __name__ == "__main__":
+    # 差分の計算
     main()
 
 
