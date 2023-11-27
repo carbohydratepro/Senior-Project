@@ -129,16 +129,26 @@ def similarity_percentage(vec1, vec2):
     return (sim + 1) / 2 * 100
 
 def main():
-    # Connect to the database
+    # Connect to the database 旧
     conn = sqlite3.connect('./suggest-similar/db/words_embeddings.db')
     cursor = conn.cursor()
 
     # Fetch all the records where vector is not NULL
     cursor.execute("SELECT word, vector FROM word_embeddings WHERE vector IS NOT NULL")
     rows = cursor.fetchall()
-    
+   
+   
+    # # Connect to the database 新
+    # conn = sqlite3.connect('./wiki_data_analysis/db/words_embeddings.db')
+    # cursor = conn.cursor()
+
+    # # Fetch all the records where vector is not NULL
+    # cursor.execute("SELECT word, vector FROM word_embeddings")
+    # rows = cursor.fetchall()
+ 
+ 
     tokenizer, model = initialize_bert_model()
-    
+
     while True:
         target_word = input("input_word:")
         if target_word == "command_exit":

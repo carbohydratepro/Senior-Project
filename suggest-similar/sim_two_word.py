@@ -143,7 +143,8 @@ def similarity_percentage(vec1, vec2):
 def main():
     tokenizer, model = initialize_bert_model()
     
-    words = ["Long_short-term_memory", "回帰型ニューラルネットワーク", "Recurrent_neural_network", "Wi-Fi"]
+    words = ["openpose", "deepcut"]
+    
     rows = []
     
     for word in words:
