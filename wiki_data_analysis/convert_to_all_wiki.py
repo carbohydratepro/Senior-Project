@@ -1,7 +1,5 @@
 import sqlite3
 import torch
-import requests
-import nltk
 import time
 import spacy
 import os
@@ -15,6 +13,10 @@ from tqdm import tqdm
 
 # GPUの利用可能性を確認
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if device == "cuda":
+    print("cuda is available")
+else:
+    print("use cpu")
 
 wiki_directory = "./wiki"
 
@@ -68,7 +70,7 @@ def get_word_embedding(tokenizer, model, sentence):
     return embeddings
 
 def initialize_db():
-    conn = sqlite3.connect('./wiki_data_analysis/db/words_embeddings.db')
+    conn = sqlite3.connect('./wiki_data_analysis/db/words_embeddings_from_mask.db')
     cursor = conn.cursor()
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS word_embeddings (
@@ -91,7 +93,8 @@ def main():
 
     
     for root, dirs, files in os.walk(wiki_directory):
-        for i, file in enumerate(files):
+        print(dirs)
+        for i, file in enumerate(tqdm(files)):
             print(f"processing status : {i+1} / {len(files)}")
             # 拡張子がないファイルを対象とする
             if '.' not in file:
@@ -99,7 +102,7 @@ def main():
                 with open(file_path, 'r', encoding='utf-8') as f:
                     text = f.read()
                     extracted_info = extract_info(text)
-                    for wiki_id, word, content in tqdm(extracted_info):
+                    for wiki_id, word, content in extracted_info:
                         wikipedia_text = remove_unnecessary_words(content)
                         vector = get_word_embedding(tokenizer, model, wikipedia_text)
                         
@@ -110,5 +113,6 @@ def main():
     conn.commit()
     conn.close()
 
+                    
 if __name__ == "__main__":
     main()

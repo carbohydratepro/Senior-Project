@@ -1,6 +1,7 @@
 import os
 import re
 import time
+from tqdm import tqdm
 
 def extract_info(text):
     # <doc>タグ内のid, title, 本文を抽出する正規表現
@@ -10,8 +11,10 @@ def extract_info(text):
 
 wiki_directory = "./wiki"
 
+count = 0
+
 for root, dirs, files in os.walk(wiki_directory):
-    for file in files:
+    for file in tqdm(files):
         # 拡張子がないファイルを対象とする
         if '.' not in file:
             file_path = os.path.join(root, file)
@@ -19,9 +22,6 @@ for root, dirs, files in os.walk(wiki_directory):
                 text = f.read()
                 extracted_info = extract_info(text)
                 for id, title, content in extracted_info:
-                    print(f"ID: {id}")
-                    print(f"Title: {title}")
-                    print("Content:")
-                    print(content)
-                    print("\n---\n")
-                    time.sleep(1)
+                    count += 1
+                    
+print(count)
