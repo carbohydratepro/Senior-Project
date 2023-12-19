@@ -63,18 +63,18 @@ def get_word_embedding(tokenizer, model, sentence):
         return None, str(e)
 
 
-def chunk_text(text, max_bytes=5000):
-    """テキストをバイトサイズに基づいてチャンクに分割する"""
-    bytes_text = text.encode('utf-8')
-    start = 0
-    chunks = []
-    while start < len(bytes_text):
-        end = start + max_bytes
-        # バイト列を文字列にデコードして、最後の完全な文を見つける
-        chunk = bytes_text[start:end].decode('utf-8', 'ignore').rsplit('.', 1)[0] + '.'
-        chunks.append(chunk)
-        start += len(chunk.encode('utf-8'))
-    return chunks
+# def chunk_text(text, max_bytes=5000):
+#     """テキストをバイトサイズに基づいてチャンクに分割する"""
+#     bytes_text = text.encode('utf-8')
+#     start = 0
+#     chunks = []
+#     while start < len(bytes_text):
+#         end = start + max_bytes
+#         # バイト列を文字列にデコードして、最後の完全な文を見つける
+#         chunk = bytes_text[start:end].decode('utf-8', 'ignore').rsplit('.', 1)[0] + '.'
+#         chunks.append(chunk)
+#         start += len(chunk.encode('utf-8'))
+#     return chunks
 
 
 def get_wikipedia_paragraphs(word):
@@ -139,6 +139,7 @@ def main():
    
    
     # # Connect to the database 新
+    print("データベース接続中")
     conn = sqlite3.connect("E:\words_embeddings_from_mask.db")
     cursor = conn.cursor()
 
@@ -146,6 +147,7 @@ def main():
     cursor.execute("SELECT word, vector FROM word_embeddings")
     rows = cursor.fetchall()
  
+    print("データベース接続終了")
  
     tokenizer, model = initialize_bert_model()
 
@@ -178,6 +180,7 @@ def main():
             word, per = result
             print(f"{word}:{per}")
         print([word[0] for word in top_10])
+        print(target_word, word_sim[target_word])
 
 if __name__ == "__main__":
     main()
