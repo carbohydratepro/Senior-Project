@@ -36,4 +36,5 @@ suggest-similar/db
 *.bz2
 text/
 wiki/
-db
+db/
+image/
