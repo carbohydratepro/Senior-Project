@@ -39,12 +39,18 @@ def related_terms(keyword, relation_type):
     return data
 
 if __name__ == "__main__":
-    keyword = "肉食動物"
+    keyword = "人工知能"
+    relation = "Synonyms"
+    output = related_terms(keyword, relation)
+    print(output)
+    
     relation = "Hypernyms"
     output = related_terms(keyword, relation)
     print(output)
 
-
+    relation = "Hyponyms"
+    output = related_terms(keyword, relation)
+    print(output)
 
 # 同義語（Synonyms）:
 

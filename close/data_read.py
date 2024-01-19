@@ -4,21 +4,16 @@ from transformers import BertModel, BertTokenizer
 import torch
 import numpy as np
 
-input_title = "拡散モデルを用いた音楽と数学の相関分析"
+# GPUが利用可能かチェックし、利用可能な場合はGPUを使用
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+input_title = "自然言語処理とブロックチェーン技術を活用したセキュアな通信プロトコル"
 input_content = """
-本論文では、量子コンピューティングの技術を活用して、持続可能な農業システムを設計し、実装するための新しいアプローチを提案します。持続可能な農業は、地球の人口が増加し、気候変動が進行する中で、世界的に重要な課題となっています。この研究は、量子コンピュータの強力な計算能力を利用して、農業生産の効率性と環境への影響を最適化する方法を模索します。
-
-まず、量子コンピューティングが持つ膨大なデータ処理能力を利用して、農業に関わる複雑なデータセットを分析します。これには、気候変動データ、土壌の状態、作物の生育パターンなどが含まれます。量子アルゴリズムを使用して、これらのデータから農業におけるリスクと機会を特定し、より効率的な栽培方法を開発します。
-
-次に、持続可能な農業システムのための量子コンピューティングベースのモデルを構築します。このモデルは、資源の最適な使用、作物の生産性向上、環境への負荷軽減を目指します。量子コンピュータは、異なる農業戦略の結果を高速にシミュレートし、最も持続可能なアプローチを特定します。
-
-さらに、量子コンピューティングを用いて、農業における長期的な気候変動の影響を予測し、適応戦略を提案します。このアプローチにより、農業システムは変化する環境条件に柔軟に対応し、食糧安全保障の向上に貢献します。
-
-最後に、本論文は、量子コンピューティングが持続可能な農業の未来に果たす重要な役割について結論づけます。量子技術を農業に適用することにより、食糧生産の持続可能性を高め、環境への影響を最小限に抑えることが可能になると主張します。これは、地球規模の食糧問題に対する効果的な解決策となる可能性があります。
+本論文では、自然言語処理（NLP）とブロックチェーン技術を組み合わせた革新的なセキュア通信プロトコルを提案します。現代のデジタル通信環境において、セキュリティとプライバシーの確保は非常に重要です。この研究では、自然言語の理解と解析に長けた機械学習モデルと、ブロックチェーンに基づく堅固なセキュリティ構造を組み合わせることで、これらの課題に対処します。研究の最初の段階では、自然言語処理を用いて通信内容のセマンティック分析を行い、機密情報の自動検出を可能にします。この分析により、重要なデータが含まれる通信を特定し、高度なセキュリティ対策を適用します。次に、ブロックチェーン技術を活用して、通信の不変性と追跡不可能性を保証します。このプロトコルは、各通信に一意のトランザクションIDを割り当て、ブロックチェーン上に記録します。これにより、データの改ざんや不正アクセスを効果的に防ぐことができます。この論文は、自然言語処理とブロックチェーン技術の融合により、通信セキュリティの新たな可能性を探ります。セキュリティ専門家、データサイエンティスト、および通信技術者にとって、新しいセキュリティ対策の開発に役立つ知見を提供するものです。
 """
 # CSVファイルのパス
 path_titles = './theme-decision-support/data/titles.csv'
-path_contents = './theme-decision-support/data/contents.csv'
+path_contents = './theme-decision-support/data/overview.csv'
 
 # CSVファイルを読み込む
 # 最初の行（ヘッダー）は無視する
@@ -32,46 +27,61 @@ contents = contents[0].tolist()
 # titleとcontentをペアにしてリストに格納
 title_content_pairs = list(zip(titles, contents))
 
-title_content_pairs = title_content_pairs[0:1]
+# title_content_pairs = title_content_pairs[0:1]
 
 
 # BERTモデルとトークナイザーのロード
-model_name = 'cl-tohoku/bert-base-japanese-v3'
+model_name = 'cl-tohoku/bert-large-japanese-v2'
 tokenizer = BertTokenizer.from_pretrained(model_name)
-model = BertModel.from_pretrained(model_name)
+model = BertModel.from_pretrained(model_name).to(device)
 
-# 文章をBERTのベクトルに変換する関数
-def bert_vectorize(text):
-    tokens = tokenizer(text, return_tensors='pt', max_length=512, truncation=True, padding='max_length')
+# 文章をBERTのベクトルに変換する関数（バッチ処理）
+def bert_vectorize(texts):
+    tokens = tokenizer(texts, return_tensors='pt', max_length=512, truncation=True, padding='max_length', add_special_tokens=True)
+    tokens = {k: v.to(device) for k, v in tokens.items()}
     with torch.no_grad():
         outputs = model(**tokens)
     return outputs.last_hidden_state.mean(dim=1).squeeze()
+
+def bert_vectorize_max_pooling(texts):
+    tokens = tokenizer(texts, return_tensors='pt', max_length=512, truncation=True, padding='max_length', add_special_tokens=True)
+    tokens = {k: v.to(device) for k, v in tokens.items()}
+    with torch.no_grad():
+        outputs = model(**tokens)
+    return torch.max(outputs.last_hidden_state, dim=1).values.squeeze()
+
+def bert_vectorize_cls_token(texts):
+    tokens = tokenizer(texts, return_tensors='pt', max_length=512, truncation=True, padding='max_length', add_special_tokens=True)
+    tokens = {k: v.to(device) for k, v in tokens.items()}
+    with torch.no_grad():
+        outputs = model(**tokens)
+    # [CLS]トークンは最初のトークンなので、インデックス0を選択
+    return outputs.last_hidden_state[:, 0, :].squeeze()
+
 
 # 類似度を計算する関数
 def cosine_similarity(vec1, vec2):
     return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
 
-# 入力文章とコンテンツの類似度を計算する関数
-def calculate_similarity(input_text, contents):
-    input_vec = bert_vectorize(input_text)
-    similarities = []
-    for content in contents:
-        content_vec = bert_vectorize(content)
-        sim = cosine_similarity(input_vec, content_vec)
-        similarities.append(sim)
-    return similarities
 
-# 使用例
-# input_text = "ここに入力文章を入れます"
-# contents = ["content1", "content2", ...]  # コンテンツのリスト
-# title_content_pairs = [("title1", "content1"), ("title2", "content2"), ...]  # タイトルとコンテンツのペア
+# 入力文章のベクトル化
+input_vec = bert_vectorize([input_content]).cpu().numpy()
+
+# コンテンツのベクトル化（バッチ処理）
+batch_size = 100
+content_vecs = []
+for i in range(0, len(contents), batch_size):
+    batch_contents = contents[i:i+batch_size]
+    vecs = bert_vectorize(batch_contents).cpu().numpy()
+    content_vecs.extend(vecs)
 
 # 類似度計算
-similarities = calculate_similarity(input_content, [content for title, content in title_content_pairs])
+similarities = [cosine_similarity(input_vec, vec) for vec in content_vecs]
 
 print(f"文字数：{len(input_content)}")
 print(sum(similarities)/len(similarities))
 
+print(len(similarities))
 # 上位5つのタイトルと類似度を取得
 top5_indices = np.argsort(similarities)[::-1][:10]
 top5_titles = [(title_content_pairs[idx][0], similarities[idx]) for idx in top5_indices]
